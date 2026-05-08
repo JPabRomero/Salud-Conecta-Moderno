@@ -50,8 +50,8 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
   const navItems = [
     { id: 'triage', label: 'Triaje', icon: Stethoscope },
     { id: 'map', label: 'Medicamentos', icon: Pill },
-    { id: 'map_view', label: 'Mapa', icon: MapIcon },
-    { id: 'appointments', label: 'Historial', icon: History },
+    { id: 'appointments', label: 'Citas', icon: Calendar },
+    { id: 'history', label: 'Historial', icon: History },
   ];
 
   return (

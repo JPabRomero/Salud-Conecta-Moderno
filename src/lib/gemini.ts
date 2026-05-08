@@ -56,7 +56,18 @@ Responde siempre en español.`,
         responseMimeType: "application/json"
       },
     });
-    return JSON.parse(response.text);
+    const text = response.text;
+    const parsed = JSON.parse(text);
+    
+    // Basic schema validation
+    const requiredFields = ['urgency', 'recommendation', 'reasoning'];
+    const hasAllFields = requiredFields.every(field => field in parsed);
+    
+    if (!hasAllFields) {
+      throw new Error('Invalid triage response schema');
+    }
+    
+    return parsed;
   } catch (error) {
     console.error("Gemini Triage Error:", error);
     return {

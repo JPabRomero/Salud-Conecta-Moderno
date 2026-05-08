@@ -62,6 +62,7 @@ export default function TriageChecker() {
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -112,7 +113,7 @@ export default function TriageChecker() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: triageResult.error 
-          ? triageResult.reasoning
+          ? 'No hemos podido procesar tu informe de síntomas automáticamente. Por favor, intenta describirlos con más detalle o consulta con un médico profesional para una evaluación segura.'
           : (triageResult.urgency === 'emergency' 
             ? 'He analizado sus síntomas y mi evaluación indica una posible EMERGENCIA MÉDICA.' 
             : triageResult.reasoning),
@@ -155,9 +156,13 @@ export default function TriageChecker() {
         instructions: result.instructions
       });
       setToastMessage('Triaje guardado en tu historial de salud.');
+      setToastType('success');
       setShowToast(true);
     } catch (e) {
       console.error(e);
+      setToastMessage('Error al guardar el triaje. Intente de nuevo.');
+      setToastType('error');
+      setShowToast(true);
     } finally {
       setIsSaving(false);
     }
@@ -194,7 +199,7 @@ export default function TriageChecker() {
                 className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors font-mono hover:bg-primary/5 rounded-lg"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                Volver
+                Ir atrás
               </button>
             </div>
             <h2 className="text-3xl font-display font-bold text-on-surface">Diagnóstico IA</h2>
@@ -440,8 +445,8 @@ export default function TriageChecker() {
                         disabled={isSaving}
                         className="w-full h-12 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest hover:bg-surface-container-highest transition-all"
                       >
-                        <RotateCcw className="w-4 h-4" />
-                        Modificar Síntomas / Volver
+                        <ArrowLeft className="w-4 h-4" />
+                        Ir atrás
                       </button>
                     </div>
 
@@ -580,11 +585,25 @@ export default function TriageChecker() {
             exit={{ opacity: 0, y: 20, x: '-50%', transition: { duration: 0.2 } }}
             className="fixed bottom-6 left-1/2 z-[100] min-w-[280px]"
           >
-            <div className="bg-surface-bright/95 backdrop-blur-md border border-secondary/30 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center border border-secondary/30">
-                <CheckCircle2 className="w-5 h-5 text-secondary" />
+            <div className={`backdrop-blur-md border rounded-2xl p-4 shadow-2xl flex items-center gap-3 ${
+              toastType === 'success' 
+                ? 'bg-surface-bright/95 border-secondary/30' 
+                : 'bg-error-container/20 border-error/30'
+            }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${
+                toastType === 'success' 
+                  ? 'bg-secondary/10 border-secondary/30' 
+                  : 'bg-error/10 border-error/30'
+              }`}>
+                {toastType === 'success' ? (
+                  <CheckCircle2 className="w-5 h-5 text-secondary" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 text-error" />
+                )}
               </div>
-              <p className="text-xs font-bold text-on-surface">{toastMessage}</p>
+              <p className={`text-xs font-bold ${
+                toastType === 'success' ? 'text-on-surface' : 'text-error'
+              }`}>{toastMessage}</p>
             </div>
           </motion.div>
         )}

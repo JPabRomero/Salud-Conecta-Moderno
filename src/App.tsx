@@ -14,6 +14,7 @@ import Hero from './components/home/Hero';
 import Assistant from './components/chat/Assistant';
 import HealthMap from './components/maps/HealthMap';
 import Appointments from './components/appointments/Appointments';
+import History from './components/history/History';
 import TriageChecker from './components/triage/TriageChecker';
 import { Profile } from './components/profile/Profile';
 import { Settings } from './components/profile/Settings';
@@ -46,6 +47,8 @@ export default function App() {
         return <HealthMap />;
       case 'appointments':
         return <Appointments />;
+      case 'history':
+        return <History />;
       case 'profile':
         return <Profile />;
       case 'settings':

@@ -48,6 +48,9 @@ export interface Appointment {
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   serviceType: string;
   updatedAt: string;
+  doctorName?: string;
+  location?: string;
+  notes?: string;
 }
 
 export interface TriageRecord {
