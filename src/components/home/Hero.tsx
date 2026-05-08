@@ -5,9 +5,10 @@ import { MapPin, Phone, Clock, ArrowRight, ShieldCheck, HeartPulse, Activity, St
 interface HeroProps {
   onStartAssistant: () => void;
   onViewMap: () => void;
+  onOpenRegistration: (type?: 'doctor' | 'clinic' | 'lab_pharmacy') => void;
 }
 
-export default function Hero({ onStartAssistant, onViewMap }: HeroProps) {
+export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }: HeroProps) {
   return (
     <div className="flex-1">
       {/* Hero Section */}
@@ -114,6 +115,34 @@ export default function Hero({ onStartAssistant, onViewMap }: HeroProps) {
             <div>FARMACIAS 24H: <span className="text-primary">42 DISPONIBLES</span></div>
             <div>EMERGENCIAS: <span className="text-alert-red font-black">LLAMAR 911</span></div>
             <div>SISTEMA IA: <span className="text-hospital-green">ONLINE</span></div>
+        </div>
+      </section>
+
+      {/* Professional CTA */}
+      <section className="py-24 bg-surface-container-low">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-primary-container/10 border border-primary/20 rounded-[48px] p-12 md:p-16 flex flex-col md:flex-row items-center justify-between gap-12"
+          >
+            <div className="max-w-xl">
+              <h2 className="text-3xl md:text-5xl font-display font-black text-on-surface mb-6 leading-tight">
+                ¿Eres un profesional de la salud o regente de farmacia?
+              </h2>
+              <p className="text-lg text-on-surface-variant font-medium leading-relaxed opacity-80">
+                Únete a la red interoperable <span className="text-primary font-bold">Salud Conecta™</span>. Registra tu laboratorio, clínica o farmacia para aparecer en el mapa de stock y disponibilidad en tiempo real.
+              </p>
+            </div>
+            <button 
+              onClick={() => onOpenRegistration('lab_pharmacy')}
+              className="group whitespace-nowrap bg-primary text-on-primary px-12 py-6 rounded-2xl font-display font-black text-lg uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-4"
+            >
+              Registrar Establecimiento
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </motion.div>
         </div>
       </section>
     </div>

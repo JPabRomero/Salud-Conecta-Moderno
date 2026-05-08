@@ -15,7 +15,11 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-export default function Search() {
+interface SearchProps {
+  onOpenRegistration: (type?: 'doctor' | 'clinic' | 'lab_pharmacy') => void;
+}
+
+export default function Search({ onOpenRegistration }: SearchProps) {
   return (
     <div className="flex flex-col gap-8 pb-20 md:pb-0">
       {/* Search & Filters Hero */}
@@ -37,15 +41,26 @@ export default function Search() {
             </p>
           </motion.div>
 
-          <div className="relative mb-8 group/search">
-            <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-outline group-focus-within/search:text-primary transition-colors w-5 h-5" />
-            <input 
-              className="w-full bg-surface-container-low border border-outline-variant/50 text-on-surface placeholder-on-surface-variant/50 font-normal text-lg rounded-2xl pl-14 pr-6 py-5 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-inner" 
-              placeholder="Buscar doctor, especialidad, síntomas..." 
-              type="text"
-            />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex gap-2">
-              <kbd className="px-2 py-1 bg-surface-container-highest rounded-md text-[10px] font-bold text-on-surface-variant border border-outline-variant/30">⌘ K</kbd>
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="relative flex-[2.5] group/search">
+              <SearchIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-outline group-focus-within/search:text-primary transition-colors w-5 h-5" />
+              <input 
+                className="w-full bg-surface-container-low border border-outline-variant/50 text-on-surface placeholder-on-surface-variant/50 font-normal text-lg rounded-2xl pl-14 pr-6 py-5 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-inner" 
+                placeholder="Buscar doctor, especialidad, síntomas..." 
+                type="text"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden sm:flex gap-2">
+                <kbd className="px-2 py-1 bg-surface-container-highest rounded-md text-[10px] font-bold text-on-surface-variant border border-outline-variant/30">⌘ K</kbd>
+              </div>
+            </div>
+
+            <div className="relative flex-1 group/location">
+              <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-outline group-focus-within/location:text-primary transition-colors w-5 h-5" />
+              <input 
+                className="w-full bg-surface-container-low border border-outline-variant/50 text-on-surface placeholder-on-surface-variant/50 font-normal text-lg rounded-2xl pl-14 pr-6 py-5 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none shadow-inner" 
+                placeholder="Ciudad o CP..." 
+                type="text"
+              />
             </div>
           </div>
 
@@ -222,10 +237,16 @@ export default function Search() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto relative z-10">
-              <button className="px-8 py-4 bg-primary text-on-primary rounded-2xl font-display font-bold text-sm hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95">
+              <button 
+                onClick={() => onOpenRegistration('clinic')}
+                className="px-8 py-4 bg-primary text-on-primary rounded-2xl font-display font-bold text-sm hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95"
+              >
                 Registrar Clínica
               </button>
-              <button className="px-8 py-4 bg-surface-container-highest border border-outline-variant/30 text-on-surface rounded-2xl font-display font-bold text-sm hover:bg-surface-bright transition-all active:scale-95">
+              <button 
+                onClick={() => onOpenRegistration('doctor')}
+                className="px-8 py-4 bg-surface-container-highest border border-outline-variant/30 text-on-surface rounded-2xl font-display font-bold text-sm hover:bg-surface-bright transition-all active:scale-95"
+              >
                 Soy Doctor
               </button>
             </div>

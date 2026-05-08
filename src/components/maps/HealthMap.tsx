@@ -192,9 +192,35 @@ function Directions({
   return null;
 }
 
+function UserLocationMarker({ position }: { position: google.maps.LatLngLiteral }) {
+  return (
+    <AdvancedMarker position={position} zIndex={100}>
+      <div className="relative flex items-center justify-center group">
+        {/* Triple layer pulse for extreme prominence */}
+        <div className="absolute w-16 h-16 bg-primary/10 rounded-full animate-ping opacity-30" />
+        <div className="absolute w-10 h-10 bg-primary/25 rounded-full animate-ping opacity-50" />
+        <div className="absolute w-8 h-8 bg-primary/30 rounded-full animate-pulse blur-sm" />
+        
+        {/* Main Location Beacon */}
+        <div className="relative w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(46,144,250,0.8)] border-[3px] border-primary transition-transform group-hover:scale-125">
+          <div className="w-2.5 h-2.5 bg-primary rounded-full" />
+        </div>
+        
+        {/* Direction Shadow/Arrow */}
+        <div className="absolute -bottom-1 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-primary/60 group-hover:border-t-primary transition-colors" />
+
+        {/* Persistent/Hover Label */}
+        <div className="absolute -top-8 bg-primary/95 backdrop-blur-md px-3 py-1 rounded-full border border-primary-fixed/20 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 translate-x-1/2 right-1/2">
+          <span className="text-[9px] font-black uppercase tracking-[0.15em] text-on-primary whitespace-nowrap">Tu ubicación</span>
+        </div>
+      </div>
+    </AdvancedMarker>
+  );
+}
+
 export default function HealthMap() {
   const [clinics, setClinics] = useState<(Clinic & { isOpen?: boolean })[]>([]);
-  const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
+  const [selectedClinic, setSelectedClinic] = useState<(Clinic & { isOpen?: boolean }) | null>(null);
   const [center] = useState({ lat: -33.4489, lng: -70.6693 });
   const [userLocation] = useState({ lat: -33.455, lng: -70.675 }); // Mock user location
   const [isNavigating, setIsNavigating] = useState(false);
@@ -766,6 +792,9 @@ export default function HealthMap() {
                   />
                 )}
 
+                {/* User Current Location */}
+                <UserLocationMarker position={userLocation} />
+
                 {/* InfoWindow custom logic */}
                 {selectedClinic && (
                   <InfoWindow
@@ -774,55 +803,89 @@ export default function HealthMap() {
                       setSelectedClinic(null);
                       if (isNavigating) setIsNavigating(false);
                     }}
+                    headerDisabled
                   >
-                    <div className="p-3 min-w-[240px] bg-surface flex flex-col gap-4">
-                      <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-current shrink-0 ${
-                          selectedClinic.type === 'emergency' ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {selectedClinic.type === 'emergency' ? <Activity className="w-6 h-6" /> : <Hospital className="w-6 h-6" />}
-                        </div>
-                        <div>
-                          <h4 className="font-display font-bold text-base text-on-surface leading-tight">{selectedClinic.name}</h4>
-                          <p className="text-[10px] text-on-surface-variant font-medium mt-1 leading-relaxed opacity-70">
-                            {selectedClinic.address}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-outline-variant/20 pt-3">
-                         <div className="flex flex-col">
-                            <span className="text-[9px] font-bold text-outline-variant uppercase">Estatus</span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                               <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                               <span className="text-[10px] font-bold text-secondary uppercase">Abierto</span>
+                    {(() => {
+                      const isOpen = selectedClinic.isOpen !== undefined ? selectedClinic.isOpen : selectedClinic.open24h;
+                      return (
+                        <div className="p-0 -m-1 min-w-[300px] overflow-hidden bg-surface rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300">
+                          {/* Card Header with Type-specific background gradient */}
+                          <div className={`p-4 ${
+                            selectedClinic.type === 'emergency' 
+                              ? 'bg-gradient-to-br from-error/20 to-error/5' 
+                              : 'bg-gradient-to-br from-primary/20 to-primary/5'
+                          } border-b border-outline-variant/10`}>
+                            <div className="flex items-start gap-4">
+                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-current shrink-0 shadow-xl ${
+                                selectedClinic.type === 'emergency' ? 'bg-error/10 text-error shadow-error/10' : 'bg-primary/10 text-primary shadow-primary/10'
+                              }`}>
+                                {selectedClinic.type === 'emergency' ? <ShieldAlert className="w-8 h-8" /> : <Hospital className="w-8 h-8" />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-display font-black text-xl text-on-surface leading-tight tracking-tight">{selectedClinic.name}</h4>
+                                </div>
+                                <p className="text-xs text-on-surface-variant font-medium leading-relaxed opacity-70">
+                                  {selectedClinic.address}
+                                </p>
+                              </div>
                             </div>
-                         </div>
-                         <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-bold text-outline-variant uppercase">Distancia</span>
-                            <span className="text-sm font-display font-bold text-on-surface">~ {selectedClinic.id === '3' ? '2.4' : '1.2'} km</span>
-                         </div>
-                      </div>
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <button 
-                          onClick={() => setIsNavigating(true)}
-                          className={`py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                            selectedClinic.type === 'emergency' ? 'bg-error text-on-error' : 'bg-primary text-on-primary'
-                          }`}
-                        >
-                          <Navigation className="w-3 h-3 fill-current" />
-                          Ruta
-                        </button>
-                        <a 
-                          href={`tel:${selectedClinic.phone}`} 
-                          className="py-2.5 bg-surface-container border border-outline-variant/30 rounded-xl flex items-center justify-center gap-2 text-on-surface-variant hover:text-primary transition-all hover:bg-surface-container-high"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Llamar</span>
-                        </a>
-                      </div>
-                    </div>
+                          <div className="p-4 flex flex-col gap-5">
+                            <div className="flex items-center justify-between">
+                               <div className="flex flex-col gap-1">
+                                  <span className="text-[10px] font-black text-outline-variant uppercase tracking-[0.2em]">Estado del Centro</span>
+                                  <div className="flex items-center gap-2.5">
+                                     <div className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-secondary animate-pulse shadow-[0_0_10px_rgba(81,223,142,0.8)]' : 'bg-outline-variant'}`} />
+                                     <span className={`text-xs font-black uppercase tracking-[0.1em] ${isOpen ? 'text-secondary' : 'text-outline-variant'}`}>
+                                        {isOpen ? 'Disponible Ahora' : 'Cerrado Actualmente'}
+                                     </span>
+                                  </div>
+                               </div>
+                               <div className="flex flex-col items-end gap-1">
+                                  <span className="text-[10px] font-black text-outline-variant uppercase tracking-[0.2em]">Distancia</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <Route className="w-4 h-4 text-primary opacity-60" />
+                                    <span className="text-xl font-display font-black text-on-surface leading-none">
+                                      {selectedClinic.id === '3' ? '2.4' : '1.2'} km
+                                    </span>
+                                  </div>
+                               </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <button 
+                                onClick={() => setIsNavigating(true)}
+                                className={`h-14 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition-all active:scale-95 group/btn overflow-hidden relative ${
+                                  selectedClinic.type === 'emergency' ? 'bg-error text-on-error shadow-error/30' : 'bg-primary text-on-primary shadow-primary-fixed/30'
+                                }`}
+                              >
+                                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                                <Navigation className="w-5 h-5 fill-current group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                Iniciar Navegación
+                              </button>
+                              <a 
+                                href={`tel:${selectedClinic.phone}`} 
+                                className="h-14 bg-surface-container-high border border-outline-variant/40 rounded-2xl flex items-center justify-center gap-3 text-on-surface hover:text-primary transition-all hover:bg-surface-bright group/phone shadow-lg"
+                              >
+                                <Phone className="w-5 h-5 group-hover/phone:rotate-[15deg] transition-transform text-secondary" />
+                                <span className="text-[11px] font-black uppercase tracking-[0.2em]">Llamar</span>
+                              </a>
+                            </div>
+                            
+                            {selectedClinic.type === 'emergency' && (
+                              <div className="flex items-center gap-3 p-3 bg-error/5 rounded-xl border border-error/10">
+                                <AlertTriangle className="w-4 h-4 text-error animate-pulse shrink-0" />
+                                <p className="text-[10px] font-bold text-error uppercase tracking-wider leading-tight">
+                                  Prioridad de urgencia activada para este destino
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </InfoWindow>
                 )}
               </Map>

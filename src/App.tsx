@@ -21,9 +21,16 @@ import { Profile } from './components/profile/Profile';
 import { Settings } from './components/profile/Settings';
 
 import Search from './components/search/Search';
+import EntityRegistration from './components/registration/EntityRegistration';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [regType, setRegType] = useState<'doctor' | 'clinic' | 'lab_pharmacy'>('lab_pharmacy');
+
+  const openRegistration = (type: 'doctor' | 'clinic' | 'lab_pharmacy' = 'lab_pharmacy') => {
+    setRegType(type);
+    setActiveTab('registration');
+  };
 
   useEffect(() => {
     const handleTabChange = (e: any) => {
@@ -40,6 +47,7 @@ export default function App() {
           <Hero 
             onStartAssistant={() => setActiveTab('triage')} 
             onViewMap={() => setActiveTab('map')} 
+            onOpenRegistration={(type) => openRegistration(type)}
           />
         );
       case 'triage':
@@ -47,7 +55,7 @@ export default function App() {
       case 'assistant':
         return <Assistant />;
       case 'search':
-        return <Search />;
+        return <Search onOpenRegistration={(type) => openRegistration(type)} />;
       case 'map':
         return <HealthMap />;
       case 'appointments':
@@ -60,11 +68,14 @@ export default function App() {
         return <Profile />;
       case 'settings':
         return <Settings />;
+      case 'registration':
+        return <EntityRegistration initialType={regType} onBack={() => setActiveTab('home')} />;
       default:
         return (
           <Hero 
             onStartAssistant={() => setActiveTab('triage')} 
             onViewMap={() => setActiveTab('map')} 
+            onOpenRegistration={(type) => openRegistration(type)}
           />
         );
     }

@@ -13,7 +13,8 @@ import {
   Pill, 
   History,
   Globe,
-  Radio
+  Radio,
+  Store
 } from 'lucide-react';
 import { auth, signInWithGoogle } from '../../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
@@ -53,6 +54,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
     { id: 'search', label: 'Buscar', icon: Globe },
     { id: 'history', label: 'Historial', icon: History },
     { id: 'appointments', label: 'Citas', icon: Calendar },
+    { id: 'registration', label: 'Registro', icon: Store },
   ];
 
   return (
