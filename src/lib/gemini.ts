@@ -61,8 +61,9 @@ Responde siempre en español.`,
     console.error("Gemini Triage Error:", error);
     return {
       urgency: 'medium',
-      recommendation: 'Ante la duda, te recomendamos consultar con un profesional de la salud en el centro más cercano.',
-      reasoning: 'Error en el procesamiento del triaje automatizado.'
+      recommendation: 'No pudimos procesar tu evaluación de triaje automáticamente. Por favor, intenta describir tus síntomas con más detalle o consulta directamente con un profesional de la salud.',
+      reasoning: 'Lo sentimos, tuvimos un problema al analizar tus síntomas. Te recomendamos intentar de nuevo o acudir a tu centro médico más cercano para una evaluación profesional.',
+      error: true
     };
   }
 };

@@ -121,7 +121,16 @@
   50% { opacity: 0.7; }
 }
 
+@keyframes voice-bounce {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.8); }
+}
+
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-voice-bounce {
+  animation: voice-bounce 1s ease-in-out infinite;
 }
 

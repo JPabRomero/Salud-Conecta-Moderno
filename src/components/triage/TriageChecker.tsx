@@ -5,7 +5,9 @@ import {
   Stethoscope, 
   AlertTriangle, 
   Pill, 
-  ArrowRight, 
+  ArrowRight,
+  ArrowLeft, 
+  RotateCcw,
   Save, 
   Send,
   Bot,
@@ -17,7 +19,8 @@ import {
   Droplets,
   Store,
   Headphones,
-  Search
+  Search,
+  ChevronDown
 } from 'lucide-react';
 import { getSmartTriage } from '../../lib/gemini';
 import { auth } from '../../lib/firebase';
@@ -32,6 +35,7 @@ interface TriageResult {
   duration?: string;
   instructions?: string;
   reasoning: string;
+  error?: boolean;
 }
 
 interface Message {
@@ -58,6 +62,7 @@ export default function TriageChecker() {
   const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,20 +92,32 @@ export default function TriageChecker() {
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setResult(null);
     setIsTyping(true);
 
     try {
       const triageResult = await getSmartTriage(text);
-      setResult(triageResult);
       
+      if (!triageResult.error) {
+        setResult(triageResult);
+        
+        if (triageResult.urgency === 'emergency') {
+          window.dispatchEvent(new CustomEvent('emergencyMode', { 
+            detail: triageResult 
+          }));
+        }
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: triageResult.urgency === 'emergency' 
-          ? 'He analizado sus síntomas y mi evaluación indica una posible EMERGENCIA MÉDICA.' 
-          : triageResult.reasoning,
+        content: triageResult.error 
+          ? triageResult.reasoning
+          : (triageResult.urgency === 'emergency' 
+            ? 'He analizado sus síntomas y mi evaluación indica una posible EMERGENCIA MÉDICA.' 
+            : triageResult.reasoning),
         timestamp: new Date(),
-        type: 'result'
+        type: triageResult.error ? 'text' : 'result'
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -109,12 +126,17 @@ export default function TriageChecker() {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: 'Lo siento, hubo un error al procesar tu solicitud. Por favor intenta de nuevo.',
+        content: 'Lo sentimos, tuvimos un problema al procesar tu solicitud. Por favor, intenta de nuevo describiendo tus síntomas o consulta con un profesional de la salud si te sientes mal.',
         timestamp: new Date()
       }]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleGoBack = () => {
+    setResult(null);
+    setIsDetailsExpanded(false);
   };
 
   const handleSaveToHistory = async () => {
@@ -160,11 +182,20 @@ export default function TriageChecker() {
       >
         {result ? (
           <div className="flex flex-col gap-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-mono text-[10px] font-bold uppercase tracking-wider w-max shadow-sm border border-secondary/20">
-              <CheckCircle2 className="w-3 h-3 fill-on-secondary-container" />
-              {result.urgency === 'low' ? 'Condición Leve Identificada' : 
-               result.urgency === 'medium' ? 'Atención Clínica Sugerida' : 
-               result.urgency === 'high' ? 'Prioridad Alta Detectada' : 'Emergencia Crítica'}
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full font-mono text-[10px] font-bold uppercase tracking-wider w-max shadow-sm border border-secondary/20">
+                <CheckCircle2 className="w-3 h-3 fill-on-secondary-container" />
+                {result.urgency === 'low' ? 'Condición Leve Identificada' : 
+                 result.urgency === 'medium' ? 'Atención Clínica Sugerida' : 
+                 result.urgency === 'high' ? 'Prioridad Alta Detectada' : 'Emergencia Crítica'}
+              </div>
+              <button 
+                onClick={handleGoBack}
+                className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold text-on-surface-variant hover:text-primary uppercase tracking-widest transition-colors font-mono hover:bg-primary/5 rounded-lg"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Volver
+              </button>
             </div>
             <h2 className="text-3xl font-display font-bold text-on-surface">Diagnóstico IA</h2>
             <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
@@ -277,70 +308,141 @@ export default function TriageChecker() {
                              <p className="text-xs text-on-surface-variant font-medium leading-relaxed italic">
                                 "{result.recommendation}"
                              </p>
+                             {result.medication && (
+                               <motion.button 
+                                 whileHover={{ scale: 1.01 }}
+                                 whileTap={{ scale: 0.99 }}
+                                 onClick={() => {
+                                   window.dispatchEvent(new CustomEvent('medicationSearch', { detail: { medication: result.medication } }));
+                                   window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
+                                 }}
+                                 className="mt-4 w-full flex items-center justify-center gap-2.5 py-3.5 px-4 bg-secondary text-on-secondary rounded-2xl font-display font-bold text-[11px] uppercase tracking-[0.1em] shadow-[0_8px_20px_rgba(81,223,142,0.25)] hover:shadow-[0_12px_24px_rgba(81,223,142,0.35)] transition-all border border-secondary-container/20 group"
+                               >
+                                 <Store className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                 Localizar {result.medication} en cercanías
+                               </motion.button>
+                             )}
                           </div>
                        </div>
 
-                       {result.medication && (
-                         <div className="p-6 space-y-6">
-                            {/* Dosage & Timing Grid */}
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
-                                  <div className="flex items-center gap-2 text-primary opacity-60 mb-1">
-                                    <Droplets className="w-4 h-4" />
-                                    <span className="text-[9px] font-bold uppercase tracking-wider font-mono">Dosis</span>
-                                  </div>
-                                  <span className="text-sm font-bold text-on-surface">{result.dosage || 'Sujeto a peso/edad'}</span>
-                               </div>
-                               <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
-                                  <div className="flex items-center gap-2 text-primary opacity-60 mb-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span className="text-[9px] font-bold uppercase tracking-wider font-mono">Frecuencia</span>
-                                  </div>
-                                  <span className="text-sm font-bold text-on-surface">{result.frequency || 'Cada 8 horas'}</span>
-                               </div>
-                            </div>
-
-                            {/* Detailed Instructions Block */}
-                            {result.instructions && (
-                              <div className="bg-surface-container-high/30 rounded-2xl p-5 border border-primary/10 relative">
-                                 <div className="flex items-center gap-3 mb-3">
-                                   <div className="p-1.5 bg-primary/10 rounded-lg">
-                                     <Stethoscope className="w-4 h-4 text-primary" />
-                                   </div>
-                                   <span className="text-[10px] font-bold text-on-surface uppercase tracking-widest font-mono">Protocolo de Aplicación</span>
-                                 </div>
-                                 <p className="text-xs text-on-surface-variant font-medium leading-relaxed pl-1 border-l-2 border-primary/30">
-                                   {result.instructions}
-                                 </p>
-                                 <div className="mt-4 flex items-center gap-2 p-2 bg-on-surface/5 rounded-lg border border-on-surface/5">
-                                   <Calendar className="w-4 h-4 text-primary opacity-60" />
-                                   <span className="text-[10px] font-bold text-on-surface-variant">Duración: <span className="text-on-surface">{result.duration || 'Hasta remisión de síntomas'}</span></span>
-                                 </div>
+                       {/* Optional Details Block - Collapsible */}
+                       {(result.medication || result.instructions) && (
+                         <div className="p-6 pt-0 space-y-4">
+                            <button
+                              onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+                              className="w-full flex items-center justify-between p-4 bg-surface-container-high/30 rounded-2xl border border-primary/10 hover:bg-surface-container-high/50 transition-all text-[10px] font-bold text-on-surface uppercase tracking-widest font-mono group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-1.5 bg-primary/10 rounded-lg group-hover:scale-110 transition-transform">
+                                  <FileText className="w-4 h-4 text-primary" />
+                                </div>
+                                <span>Detalles Adicionales del Plan</span>
                               </div>
-                            )}
+                              <motion.div
+                                animate={{ rotate: isDetailsExpanded ? 180 : 0 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <ChevronDown className="w-4 h-4 text-on-surface-variant" />
+                              </motion.div>
+                            </button>
+
+                            <AnimatePresence>
+                              {isDetailsExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.4, ease: [0.215, 0.61, 0.355, 1] }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="space-y-6 pt-2">
+                                    {/* Dosage & Timing Grid */}
+                                    {result.medication && (
+                                      <div className="grid grid-cols-2 gap-4">
+                                         <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+                                            <div className="flex items-center gap-2 text-primary opacity-60 mb-1">
+                                              <Droplets className="w-4 h-4" />
+                                              <span className="text-[9px] font-bold uppercase tracking-wider font-mono">Dosis</span>
+                                            </div>
+                                            <span className="text-sm font-bold text-on-surface">{result.dosage || 'Sujeto a peso/edad'}</span>
+                                         </div>
+                                         <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+                                            <div className="flex items-center gap-2 text-primary opacity-60 mb-1">
+                                              <Clock className="w-4 h-4" />
+                                              <span className="text-[9px] font-bold uppercase tracking-wider font-mono">Frecuencia</span>
+                                            </div>
+                                            <span className="text-sm font-bold text-on-surface">{result.frequency || 'Cada 8 horas'}</span>
+                                         </div>
+                                      </div>
+                                    )}
+
+                                    {/* Detailed Instructions */}
+                                    {result.instructions && (
+                                      <div className="bg-surface-container-high/20 rounded-2xl p-5 border border-primary/5 relative">
+                                        <div className="flex items-center gap-3 mb-3">
+                                          <div className="p-1 bg-primary/20 rounded-md">
+                                            <Stethoscope className="w-3.5 h-3.5 text-primary" />
+                                          </div>
+                                          <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest font-mono">Instrucciones Específicas</span>
+                                        </div>
+                                        <p className="text-xs text-on-surface-variant font-medium leading-relaxed pl-3 border-l-2 border-primary/30">
+                                          {result.instructions}
+                                        </p>
+                                        <div className="mt-4 flex items-center gap-2 p-2.5 bg-on-surface/5 rounded-xl border border-on-surface/5">
+                                          <Calendar className="w-4 h-4 text-primary opacity-60" />
+                                          <span className="text-[10px] font-bold text-on-surface-variant">Duración Sugerida: <span className="text-on-surface">{result.duration || 'Hasta remisión de síntomas'}</span></span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                          </div>
                        )}
 
-                       <div className="p-6 bg-surface-container-highest/20 border-t border-outline-variant/20 flex flex-col sm:flex-row gap-3">
-                          <button
-                            onClick={() => {
-                              if (result.medication) {
-                                window.dispatchEvent(new CustomEvent('medicationSearch', { detail: { medication: result.medication } }));
-                              }
-                              window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
-                            }}
-                            className="flex-1 h-11 bg-primary text-on-primary rounded-xl flex items-center justify-center gap-2 text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
-                          >
-                            <Search className="w-4 h-4" />
-                            Buscar en Farmacias
-                          </button>
-                          <button
-                            className="flex-1 h-11 bg-surface-container-highest border border-outline-variant/30 text-on-surface rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-surface-container transition-all"
-                          >
-                            <Headphones className="w-4 h-4" />
-                            Teleconsulta IA
-                          </button>
+                       <div className="p-6 bg-surface-container-highest/20 border-t border-outline-variant/20 flex flex-col gap-4">
+                          <div className="flex flex-col sm:flex-row gap-3">
+                             <button
+                               onClick={() => {
+                                 if (result.medication) {
+                                   window.dispatchEvent(new CustomEvent('medicationSearch', { detail: { medication: result.medication } }));
+                                 }
+                                 window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
+                               }}
+                               className="flex-1 h-11 bg-primary text-on-primary rounded-xl flex items-center justify-center gap-2 text-xs font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition-all"
+                             >
+                               <Search className="w-4 h-4" />
+                               Buscar en Farmacias
+                             </button>
+                             <button
+                               className="flex-1 h-11 bg-surface-container-highest border border-outline-variant/30 text-on-surface rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-surface-container transition-all"
+                             >
+                               <Headphones className="w-4 h-4" />
+                               Teleconsulta IA
+                             </button>
+                          </div>
                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={handleSaveToHistory}
+                        disabled={isSaving || !result}
+                        className="w-full h-12 bg-secondary text-on-secondary rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest shadow-lg hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
+                      >
+                        {isSaving ? <Activity className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        {isSaving ? 'Guardando...' : 'Guardar en Historial'}
+                      </button>
+
+                      <button
+                        onClick={handleGoBack}
+                        disabled={isSaving}
+                        className="w-full h-12 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant rounded-2xl flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest hover:bg-surface-container-highest transition-all"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Modificar Síntomas / Volver
+                      </button>
                     </div>
 
                     {/* Safety Alert - More Stylized */}
@@ -359,15 +461,6 @@ export default function TriageChecker() {
                         </p>
                       </div>
                     </motion.div>
-
-                    <button
-                      onClick={handleSaveToHistory}
-                      disabled={isSaving}
-                      className="w-full h-14 bg-on-surface text-surface rounded-[24px] flex items-center justify-center gap-3 text-xs font-bold uppercase tracking-widest shadow-2xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-                    >
-                      {isSaving ? <Activity className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                      {isSaving ? 'Sincronizando...' : 'Sincronizar Historial Clínico'}
-                    </button>
                   </motion.div>
                 )}
               </div>
@@ -448,11 +541,26 @@ export default function TriageChecker() {
             </div>
 
             <button
-               onClick={() => result ? window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' })) : handleSend('Finalizar evaluación')}
-               className="w-full h-12 bg-primary text-on-primary font-display font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-xl hover:bg-primary-container transition-all border border-primary/50 group"
+               onClick={() => {
+                 if (result) {
+                    if (result.urgency === 'emergency') {
+                      window.dispatchEvent(new CustomEvent('emergencyMode', { detail: result }));
+                    }
+                    window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
+                 } else {
+                    handleSend('Finalizar evaluación');
+                 }
+               }}
+               className={`w-full h-12 font-display font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-xl transition-all border group ${
+                 result?.urgency === 'emergency' 
+                   ? 'bg-error text-on-error border-error shadow-error/30 animate-pulse' 
+                   : 'bg-primary text-on-primary border-primary/50 hover:bg-primary-container'
+               }`}
             >
                <FileText className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-               {result ? 'Ver centros cercanos' : 'Finalizar y ver diagnóstico'}
+               {result 
+                 ? result.urgency === 'emergency' ? 'Ver centros de urgencia' : 'Ver centros cercanos' 
+                 : 'Finalizar y ver diagnóstico'}
             </button>
           </div>
           
