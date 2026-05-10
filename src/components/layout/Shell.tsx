@@ -18,11 +18,13 @@ import {
   Search as SearchIcon,
   Zap,
   Trophy,
-  Flame
+  Flame,
+  Bell
 } from 'lucide-react';
 import { auth, signInWithGoogle } from '../../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { syncUserProfile } from '../../lib/authUtils';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface ShellProps {
   children: React.ReactNode;
@@ -31,6 +33,7 @@ interface ShellProps {
 }
 
 export default function Shell({ children, activeTab, setActiveTab }: ShellProps) {
+  const { t } = useLanguage();
   const [user, setUser] = React.useState<FirebaseUser | null>(null);
 
   React.useEffect(() => {
@@ -53,11 +56,11 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
   }, [setActiveTab]);
 
   const navItems = [
-    { id: 'triage', label: 'Triaje', icon: Stethoscope },
-    { id: 'pharmacy', label: 'Farmacias', icon: Store },
-    { id: 'search', label: 'Buscar', icon: SearchIcon },
-    { id: 'rewards', label: 'Premios', icon: Trophy },
-    { id: 'activity', label: 'Retos', icon: Flame },
+    { id: 'triage', label: t('nav.triage'), icon: Stethoscope },
+    { id: 'pharmacy', label: t('nav.pharmacy'), icon: Store },
+    { id: 'search', label: t('nav.search'), icon: SearchIcon },
+    { id: 'rewards', label: t('nav.rewards'), icon: Trophy },
+    { id: 'activity', label: t('nav.activity'), icon: Flame },
   ];
 
   return (

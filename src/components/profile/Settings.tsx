@@ -3,29 +3,24 @@ import { motion } from 'motion/react';
 import { 
   ArrowLeft, 
   Bell, 
-  Stethoscope, 
-  Pill, 
-  AlertTriangle, 
-  Store, 
-  Navigation, 
-  Mail, 
-  MessageSquare, 
-  Smartphone,
-  Check,
-  ShieldCheck,
-  Trophy,
-  Ticket,
-  Clock,
-  Clock3,
-  MessageCircle,
-  Save,
-  Activity,
-  History,
+  ShieldCheck, 
+  Ticket, 
+  Smartphone, 
+  Save, 
+  Activity, 
+  History, 
   Timer,
   Sun,
   Moon,
-  Palette
+  Palette,
+  Languages,
+  Stethoscope,
+  MessageCircle,
+  Mail,
+  Clock3,
+  Check
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SettingItemProps {
   title: string;
@@ -68,6 +63,7 @@ function SettingItem({ title, description, icon: Icon, iconColor = "text-primary
 }
 
 export function Settings() {
+  const { language, setLanguage, t } = useLanguage();
   const [notifs, setNotifs] = useState({
     critical: true,
     challenges: true,
@@ -128,8 +124,8 @@ export function Settings() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <div>
-            <h2 className="text-4xl font-display font-black text-on-surface">Ajustes y Personalización</h2>
-            <p className="text-sm text-on-surface-variant mt-1 font-medium italic opacity-70">Gestiona como interactúas con la plataforma y su apariencia.</p>
+            <h2 className="text-4xl font-display font-black text-on-surface">{t('settings.title')}</h2>
+            <p className="text-sm text-on-surface-variant mt-1 font-medium italic opacity-70">{t('settings.subtitle')}</p>
           </div>
         </div>
       </motion.div>
@@ -137,11 +133,84 @@ export function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sections Column */}
         <div className="lg:col-span-8 flex flex-col gap-8">
+          {/* Language Section */}
+          <section className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 px-2">
+              <Languages className="w-5 h-5 text-primary" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">{t('settings.language')}</h3>
+            </div>
+            <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 p-8 shadow-xl">
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setLanguage('es')}
+                  className={`flex-1 p-4 rounded-2xl border-2 transition-all font-bold ${
+                    language === 'es' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container border-outline-variant/30 text-on-surface-variant'
+                  }`}
+                >
+                  Español
+                </button>
+                <button 
+                  onClick={() => setLanguage('en')}
+                  className={`flex-1 p-4 rounded-2xl border-2 transition-all font-bold ${
+                    language === 'en' ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container border-outline-variant/30 text-on-surface-variant'
+                  }`}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Appearance Section */}
+          <section className="flex flex-col gap-4">
+            <div className="flex items-center gap-3 px-2">
+              <Palette className="w-5 h-5 text-tertiary" />
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">{t('settings.appearance')}</h3>
+            </div>
+            <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 p-8 shadow-xl">
+              <div className="flex flex-col md:flex-row gap-6">
+                <button 
+                  onClick={() => toggleTheme('light')}
+                  className={`flex-1 p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-4 ${
+                    theme === 'light' 
+                      ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' 
+                      : 'bg-surface-container border-outline-variant/30 hover:border-primary/50'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'light' ? 'bg-primary text-on-primary' : 'bg-surface-variant text-on-surface-variant'}`}>
+                    <Sun className="w-6 h-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-on-surface">{t('settings.theme.light')}</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Fondo claro, alto contraste</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => toggleTheme('dark')}
+                  className={`flex-1 p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-4 ${
+                    theme === 'dark' 
+                      ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' 
+                      : 'bg-surface-container border-outline-variant/30 hover:border-primary/50'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-primary text-on-primary' : 'bg-surface-variant text-on-surface-variant'}`}>
+                    <Moon className="w-6 h-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-on-surface">{t('settings.theme.dark')}</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Tonos profundos, ahorro de batería</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </section>
+
           {/* Notifications Section */}
           <section className="flex flex-col gap-4">
             <div className="flex items-center gap-3 px-2">
               <Bell className="w-5 h-5 text-primary" />
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">Centro de Notificaciones</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">{t('settings.notifications')}</h3>
             </div>
             <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 overflow-hidden shadow-xl">
               <div className="divide-y divide-on-surface/5">
@@ -171,51 +240,6 @@ export function Settings() {
                   checked={notifs.benefits}
                   onChange={(v) => setNotifs({...notifs, benefits: v})}
                 />
-              </div>
-            </div>
-          </section>
-
-          {/* Appearance Section */}
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 px-2">
-              <Palette className="w-5 h-5 text-tertiary" />
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">Apariencia</h3>
-            </div>
-            <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 p-8 shadow-xl">
-              <div className="flex flex-col md:flex-row gap-6">
-                <button 
-                  onClick={() => toggleTheme('light')}
-                  className={`flex-1 p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-4 ${
-                    theme === 'light' 
-                      ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' 
-                      : 'bg-surface-container border-outline-variant/30 hover:border-primary/50'
-                  }`}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'light' ? 'bg-primary text-on-primary' : 'bg-surface-variant text-on-surface-variant'}`}>
-                    <Sun className="w-6 h-6" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-bold text-on-surface">Modo Diurno</p>
-                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Fondo claro, alto contraste</p>
-                  </div>
-                </button>
-
-                <button 
-                  onClick={() => toggleTheme('dark')}
-                  className={`flex-1 p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-4 ${
-                    theme === 'dark' 
-                      ? 'bg-primary/10 border-primary shadow-lg shadow-primary/10' 
-                      : 'bg-surface-container border-outline-variant/30 hover:border-primary/50'
-                  }`}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-primary text-on-primary' : 'bg-surface-variant text-on-surface-variant'}`}>
-                    <Moon className="w-6 h-6" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-bold text-on-surface">Modo Nocturno</p>
-                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Tonos profundos, ahorro de batería</p>
-                  </div>
-                </button>
               </div>
             </div>
           </section>

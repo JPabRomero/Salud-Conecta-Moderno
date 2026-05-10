@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { MapPin, Phone, Clock, ArrowRight, ShieldCheck, HeartPulse, Activity, Stethoscope } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface HeroProps {
   onStartAssistant: () => void;
@@ -9,18 +10,20 @@ interface HeroProps {
 }
 
 export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }: HeroProps) {
+  const { t, language } = useLanguage();
+
   return (
     <div className="flex-1">
       {/* Hero Section */}
-      <section className="relative h-[650px] flex items-center overflow-hidden bg-primary">
+      <section className="relative h-[650px] flex items-center overflow-hidden bg-background">
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=2070" 
             alt="Healthcare professionals" 
-            className="w-full h-full object-cover opacity-40 mix-blend-soft-light"
+            className="w-full h-full object-cover opacity-10 mix-blend-soft-light grayscale"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-transparent" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10 w-full mt-10">
@@ -28,31 +31,37 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="max-w-2xl text-white"
+            className="max-w-2xl text-white drop-shadow-lg"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/60 backdrop-blur-md rounded-full border border-white/10 mb-8">
                <span className="w-2 h-2 rounded-full bg-hospital-green animate-pulse" />
-               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">SISTEMA DE SALUD PÚBLICA INTEGRAL</span>
+               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white">{t('hero.badge')}</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-              Eficiencia <span className="text-secondary-fixed">Empática</span> al servicio de tu salud.
+
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
+              {language === 'es' ? (
+                <>Eficiencia <span className="text-secondary-fixed">Empática</span> al servicio de tu salud.</>
+              ) : (
+                <>Empathetic <span className="text-secondary-fixed">Efficiency</span> at your health's service.</>
+              )}
             </h1>
-            <p className="text-xl md:text-2xl text-primary-fixed mb-10 leading-relaxed font-medium">
-              Transformamos la incertidumbre en rutas de acción verificadas. Triaje por IA, mapas de stock y pasaporte digital de salud.
+
+            <p className="text-xl md:text-2xl text-primary-fixed mb-10 leading-relaxed font-semibold">
+              {t('hero.subtitle')}
             </p>
             <div className="flex flex-wrap gap-5">
               <button 
                 onClick={onStartAssistant}
-                className="bg-white text-primary px-10 py-5 rounded-xl font-bold text-xl hover:scale-105 hover:bg-surface shadow-[0_15px_30px_-5px_rgba(0,0,0,0.3)] transition-all flex items-center gap-3"
+                className="bg-white text-[#001c3b] px-10 py-5 rounded-xl font-black text-xl hover:scale-105 hover:bg-neutral-100 shadow-[0_15px_30px_-5px_rgba(0,0,0,0.3)] transition-all flex items-center gap-3"
               >
-                Iniciar Triaje IA
+                {t('hero.cta.primary')}
                 <Stethoscope className="w-6 h-6" />
               </button>
               <button 
                 onClick={onViewMap}
-                className="bg-primary-container/20 text-white border-2 border-white/40 px-10 py-5 rounded-xl font-bold text-xl hover:bg-white/10 transition-all flex items-center gap-3"
+                className="bg-primary-container/20 text-white border-2 border-white/40 px-10 py-5 rounded-xl font-black text-xl hover:scale-105 hover:bg-white/20 transition-all flex items-center gap-3"
               >
-                Protocolo Realon™
+                {t('hero.cta.secondary')}
                 <MapPin className="w-6 h-6" />
               </button>
             </div>
@@ -64,7 +73,7 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
       <section className="py-24 bg-surface">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-display font-bold mb-4">Servicios Integrales</h2>
+            <h2 className="text-4xl font-display font-bold mb-4">{t('features.title')}</h2>
             <div className="w-20 h-1 bg-medical-blue mx-auto rounded-full" />
           </div>
 
@@ -72,20 +81,20 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
             {[
               {
                 icon: ShieldCheck,
-                title: 'Confiabilidad Institucional',
-                desc: 'Información verificada directamente de fuentes oficiales de salud pública.',
+                title: t('features.1.title'),
+                desc: t('features.1.desc'),
                 color: 'text-medical-blue'
               },
               {
                 icon: HeartPulse,
-                title: 'Eficiencia Empática',
-                desc: 'Diseñado para reducir tu carga mental en momentos de necesidad.',
+                title: t('features.2.title'),
+                desc: t('features.2.desc'),
                 color: 'text-secondary'
               },
               {
                 icon: Activity,
-                title: 'Acceso Universal',
-                desc: 'Interfaz optimizada para máxima legibilidad y facilidad de uso.',
+                title: t('features.3.title'),
+                desc: t('features.3.desc'),
                 color: 'text-tertiary'
               }
             ].map((feature, i) => (
@@ -111,9 +120,9 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
       {/* Quick Status */}
       <section className="py-12 bg-surface-container-lowest border-y border-outline-variant/20">
         <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-wrap justify-around gap-8 text-center text-on-surface-variant uppercase tracking-[0.2em] text-[10px] font-bold font-mono">
-            <div className="flex items-center gap-2">RED DE SALUD: <span className="text-hospital-green flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hospital-green animate-pulse" /> ACTIVA</span></div>
-            <div>FARMACIAS 24H: <span className="text-primary">42 DISPONIBLES</span></div>
-            <div>EMERGENCIAS: <span className="text-alert-red font-black">LLAMAR 911</span></div>
+            <div className="flex items-center gap-2">{t('status.network')}: <span className="text-hospital-green flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hospital-green animate-pulse" /> {t('status.active')}</span></div>
+            <div>{t('status.pharmacies')}: <span className="text-primary">42 {t('status.available')}</span></div>
+            <div>{t('status.emergency')}: <span className="text-alert-red font-black">{t('status.call')} 911</span></div>
             <div>SISTEMA IA: <span className="text-hospital-green">ONLINE</span></div>
         </div>
       </section>
@@ -129,10 +138,10 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
           >
             <div className="max-w-xl">
               <h2 className="text-3xl md:text-5xl font-display font-black text-on-surface mb-6 leading-tight">
-                ¿Eres un profesional de la salud o regente de farmacia?
+                {t('cta.professional.title')}
               </h2>
               <p className="text-lg text-on-surface-variant font-medium leading-relaxed opacity-80">
-                Únete a la red interoperable <span className="text-primary font-bold">Salud Conecta™</span>. Registra tu laboratorio, clínica o farmacia para aparecer en el mapa de stock y disponibilidad en tiempo real.
+                {t('cta.professional.desc').replace('{brand}', 'Salud Conecta™')}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -140,21 +149,21 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
                 onClick={() => onOpenRegistration('doctor')}
                 className="group bg-surface border-2 border-primary/20 text-on-surface px-8 py-5 rounded-2xl font-display font-black text-sm uppercase tracking-widest hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
-                Soy Profesional
+                {t('cta.professional.doctor')}
                 <Stethoscope className="w-5 h-5 text-primary" />
               </button>
               <button 
                 onClick={() => onOpenRegistration('clinic')}
                 className="group bg-primary text-on-primary px-8 py-5 rounded-2xl font-display font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all flex items-center gap-4 text-center"
               >
-                Centro de Salud
+                {t('cta.professional.clinic')}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
                 onClick={() => onOpenRegistration('lab_pharmacy')}
                 className="group bg-surface border-2 border-secondary/20 text-on-surface px-8 py-5 rounded-2xl font-display font-black text-sm uppercase tracking-widest hover:border-secondary hover:bg-secondary/5 transition-all flex items-center gap-4"
               >
-                Laboratorio/Farmacia
+                {t('cta.professional.business')}
                 <ArrowRight className="w-5 h-5 text-secondary" />
               </button>
             </div>
