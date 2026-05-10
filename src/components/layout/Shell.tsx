@@ -34,7 +34,7 @@ interface ShellProps {
 
 export default function Shell({ children, activeTab, setActiveTab }: ShellProps) {
   const { t } = useLanguage();
-  const [user, setUser] = React.useState<FirebaseUser | null>(null);
+  const [user, setUser] = React.useState<any>(null);
 
   React.useEffect(() => {
     // Check for redirect result on mount
@@ -45,10 +45,24 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
       }
     });
 
+    // Check for mock user in localStorage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
       if (u) {
+        setUser(u);
         syncUserProfile(u);
+        localStorage.setItem('user', JSON.stringify({
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+          photoURL: u.photoURL
+        }));
+      } else if (!localStorage.getItem('isLoggedIn')) {
+        setUser(null);
       }
     });
 
@@ -91,7 +105,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
             className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'triage' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
-            title="Triaje IA"
+            title={t('nav.triage')}
           >
             <Stethoscope className="w-5 h-5" />
           </button>
@@ -100,7 +114,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
             className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'map' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
-            title="Mapa de Salud"
+            title={t('header.map')}
           >
             <Globe className="w-5 h-5" />
           </button>
@@ -109,7 +123,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
             className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'activity' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
-            title="Actividad y Retos"
+            title={t('header.activity')}
           >
             <Radio className="w-5 h-5" />
           </button>
@@ -207,38 +221,39 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
               <span className="text-xl font-bold text-primary">Salud Conecta IA</span>
             </div>
             <p className="text-on-surface-variant text-sm leading-relaxed max-w-sm">
-              Ecosistema de salud pública inteligente desarrollado para maximizar la eficiencia y empatía en la atención médica nacional.
+              {t('footer.desc')}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <h4 className="font-bold text-sm mb-4 uppercase tracking-widest">Sistema</h4>
+              <h4 className="font-bold text-sm mb-4 uppercase tracking-widest">{t('footer.system')}</h4>
               <ul className="text-sm text-on-surface-variant space-y-2">
-                <li>Triaje Avanzado</li>
-                <li>Red de Farmacias</li>
-                <li>Pasaporte PWA</li>
+                <li>{t('footer.system.triage')}</li>
+                <li>{t('footer.system.pharmacy')}</li>
+                <li>{t('footer.system.pwa')}</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-sm mb-4 uppercase tracking-widest">Legal</h4>
+              <h4 className="font-bold text-sm mb-4 uppercase tracking-widest">{t('footer.legal')}</h4>
               <ul className="text-sm text-on-surface-variant space-y-2">
-                <li>Privacidad</li>
-                <li>Términos</li>
-                <li>Accesibilidad</li>
+                <li>{t('footer.legal.privacy')}</li>
+                <li>{t('footer.legal.terms')}</li>
+                <li>{t('footer.legal.acc')}</li>
               </ul>
             </div>
           </div>
           <div className="bg-surface-container p-6 rounded-2xl border border-outline-variant">
              <div className="flex items-center gap-2 text-alert-red font-black mb-2 animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-alert-red" />
-                EMERGENCIAS: 911
+                {t('status.emergency')}: 911
              </div>
              <p className="text-xs text-on-surface-variant leading-relaxed">
-               Si siente que su vida está en peligro o tiene síntomas críticos, no use esta herramienta y llame de inmediato al 911.
+               {t('footer.emergency.desc')}
              </p>
           </div>
         </div>
       </footer>
     </div>
+
   );
 }

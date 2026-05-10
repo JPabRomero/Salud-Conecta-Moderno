@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   Footprints, 
   Flame, 
@@ -25,31 +26,32 @@ import {
 } from 'lucide-react';
 
 export default function ActivityLogs() {
+  const { t } = useLanguage();
   const [timeframe, setTimeframe] = React.useState<'week' | 'month'>('week');
 
   const stats = timeframe === 'week' ? [
     {
-      title: 'Pasos Totales',
+      title: t('stats.total_steps'),
       value: '42,850',
-      change: '+12% vs sem. ant.',
+      change: '+12% ' + t('stats.vs_prev_week'),
       trend: 'up',
       icon: Footprints,
       color: 'text-primary',
       bg: 'bg-primary/10'
     },
     {
-      title: 'Calorías Activas',
+      title: t('stats.active_calories'),
       value: '3,240',
-      change: 'kcal estimadas',
+      change: 'kcal ' + t('stats.estimated'),
       trend: 'neutral',
       icon: Flame,
       color: 'text-tertiary',
       bg: 'bg-tertiary/10'
     },
     {
-      title: 'Min. de Actividad',
+      title: t('stats.activity_min'),
       value: '315',
-      change: 'Meta alcanzada',
+      change: t('stats.goal_reached'),
       trend: 'success',
       icon: Activity,
       color: 'text-secondary',
@@ -57,27 +59,27 @@ export default function ActivityLogs() {
     }
   ] : [
     {
-      title: 'Pasos Totales',
+      title: t('stats.total_steps'),
       value: '184,200',
-      change: '+8% vs mes ant.',
+      change: '+8% ' + t('stats.vs_prev_month'),
       trend: 'up',
       icon: Footprints,
       color: 'text-primary',
       bg: 'bg-primary/10'
     },
     {
-      title: 'Calorías Activas',
+      title: t('stats.active_calories'),
       value: '14,560',
-      change: 'Promedio estable',
+      change: t('stats.stable_avg'),
       trend: 'neutral',
       icon: Flame,
       color: 'text-tertiary',
       bg: 'bg-tertiary/10'
     },
     {
-      title: 'Min. de Actividad',
+      title: t('stats.activity_min'),
       value: '1,280',
-      change: '+15% actividad',
+      change: '+15% ' + t('stats.activity'),
       trend: 'success',
       icon: Activity,
       color: 'text-secondary',
@@ -102,8 +104,8 @@ export default function ActivityLogs() {
 
   const challenges = timeframe === 'week' ? [
     {
-      title: 'Reto de 10k Pasos Diarios',
-      subtitle: 'Día 4 de 7 consecutivos',
+      title: t('challenges.steps_10k'),
+      subtitle: t('challenges.day_4_of_7'),
       points: '+500 pts',
       icon: Flag,
       color: 'text-secondary',
@@ -114,8 +116,8 @@ export default function ActivityLogs() {
       milestones: [25, 50, 75]
     },
     {
-      title: 'Hidratación Óptima',
-      subtitle: 'Bebe 2L diarios (Semana)',
+      title: t('challenges.optimal_hydration'),
+      subtitle: t('challenges.drink_2l_daily_week'),
       points: '+200 pts',
       icon: Droplets,
       color: 'text-primary',
@@ -126,8 +128,8 @@ export default function ActivityLogs() {
     }
   ] : [
     {
-      title: 'Maratón de Salud Mensual',
-      subtitle: 'Acumula 300,000 pasos en 30 días',
+      title: t('challenges.marathon'),
+      subtitle: t('challenges.marathon_desc'),
       points: '+2,000 pts',
       icon: Trophy,
       color: 'text-secondary',
@@ -137,38 +139,38 @@ export default function ActivityLogs() {
       target: '300,000'
     },
     {
-      title: 'Consistencia de Sueño',
-      subtitle: '7h+ diarias por 4 semanas',
+      title: t('challenges.sleep_consistency'),
+      subtitle: t('challenges.sleep_consistency_desc'),
       points: '+800 pts',
       icon: Activity,
       color: 'text-tertiary',
       bg: 'bg-tertiary/10',
       progress: 75,
-      current: '21/28 días',
-      target: '28 días'
+      current: '21/28 ' + t('activity.days'),
+      target: '28 ' + t('activity.days')
     }
   ];
 
   const recentActivity = timeframe === 'week' ? [
     {
-      title: 'Caminata matutina',
-      time: 'Hoy, 07:30 AM • 45 min',
+      title: t('activity.morning_walk'),
+      time: t('activity.today') + ', 07:30 AM • 45 min',
       points: '+50 pts',
       icon: Footprints,
       color: 'text-secondary',
       bg: 'bg-secondary/10'
     },
     {
-      title: 'Sesión de hidratación',
-      time: 'Hoy, 10:15 AM • 500ml',
+      title: t('activity.hydration_session'),
+      time: t('activity.today') + ', 10:15 AM • 500ml',
       points: '+10 pts',
       icon: Droplets,
       color: 'text-primary',
       bg: 'bg-primary/10'
     },
     {
-      title: 'Registro de Presión',
-      time: 'Ayer, 08:00 PM • 120/80',
+      title: t('activity.blood_pressure'),
+      time: t('activity.yesterday') + ', 08:00 PM • 120/80',
       points: '+20 pts',
       icon: Activity,
       color: 'text-on-surface',
@@ -176,16 +178,16 @@ export default function ActivityLogs() {
     }
   ] : [
     {
-      title: 'Meta mensual alcanzada (Agua)',
-      time: 'Ayer, 11:00 PM',
+      title: t('activity.monthly_goal_reached_water'),
+      time: t('activity.yesterday') + ', 11:00 PM',
       points: '+500 pts',
       icon: Droplets,
       color: 'text-primary',
       bg: 'bg-primary/10'
     },
     {
-      title: 'Chequeo Médico Mensual',
-      time: 'Hace 5 días',
+      title: t('activity.monthly_checkup'),
+      time: t('activity.5_days_ago'),
       points: '+100 pts',
       icon: Stethoscope,
       color: 'text-secondary',
@@ -198,8 +200,8 @@ export default function ActivityLogs() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-display font-black text-on-surface tracking-tight">Registros de Actividad</h2>
-          <p className="text-lg text-on-surface-variant mt-1 font-medium opacity-70">Tu progreso de salud y retos completados esta semana.</p>
+          <h2 className="text-4xl font-display font-black text-on-surface tracking-tight">{t('activity.title')}</h2>
+          <p className="text-lg text-on-surface-variant mt-1 font-medium opacity-70">{t('activity.subtitle')}</p>
         </div>
         <div className="flex items-center gap-1 bg-surface-container-low border border-outline-variant/30 rounded-2xl p-1 shadow-sm">
           <button 
@@ -210,7 +212,7 @@ export default function ActivityLogs() {
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            Semana
+            {t('activity.week')}
           </button>
           <button 
             onClick={() => setTimeframe('month')}
@@ -220,7 +222,7 @@ export default function ActivityLogs() {
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            Mes
+            {t('activity.month')}
           </button>
         </div>
       </div>
@@ -263,7 +265,7 @@ export default function ActivityLogs() {
           {/* Chart Section */}
           <section className="bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-8 flex flex-col shadow-xl">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="text-2xl font-display font-black text-on-surface">Progreso Diario</h3>
+              <h3 className="text-2xl font-display font-black text-on-surface">{t('activity.daily_progress')}</h3>
               <button className="text-on-surface-variant hover:bg-surface-container-high p-3 rounded-full transition-all">
                 <MoreVertical className="w-6 h-6" />
               </button>
@@ -307,7 +309,7 @@ export default function ActivityLogs() {
           <section className="flex flex-col gap-6">
             <div className="flex items-center gap-3 mb-2">
               <Flag className="w-5 h-5 text-primary" />
-              <h3 className="text-2xl font-display font-black text-on-surface">Retos Activos</h3>
+              <h3 className="text-2xl font-display font-black text-on-surface">{t('activity.active_challenges')}</h3>
             </div>
 
             <div className="flex flex-col gap-6">
@@ -334,13 +336,13 @@ export default function ActivityLogs() {
                       <span className={`text-[10px] font-black uppercase tracking-widest ${challenge.color} block bg-white/5 px-3 py-1.5 rounded-full border border-current/20`}>
                         {challenge.points}
                       </span>
-                      <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter block mt-2 opacity-40">Recompensa</span>
+                      <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-tighter block mt-2 opacity-40">{t('activity.reward')}</span>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-3">
                     <div className="flex justify-between text-[10px] font-black uppercase tracking-widest font-mono">
-                      <span className="text-on-surface-variant">Progreso Actual</span>
+                      <span className="text-on-surface-variant">{t('activity.current_progress')}</span>
                       <span className={`${challenge.color}`}>{challenge.current} / {challenge.target}</span>
                     </div>
                     <div className="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden relative shadow-inner">
@@ -362,7 +364,7 @@ export default function ActivityLogs() {
                         <span>2.5k</span>
                         <span>5k</span>
                         <span>7.5k</span>
-                        <span>Meta</span>
+                        <span>{t('activity.goal')}</span>
                       </div>
                     )}
                   </div>
@@ -379,7 +381,7 @@ export default function ActivityLogs() {
             
             <h3 className="text-xl font-display font-black text-on-surface mb-8 pb-4 border-b border-outline-variant/10 flex items-center gap-3">
               <History className="w-5 h-5 text-primary" />
-              Actividad Reciente
+              {t('activity.recent')}
             </h3>
             
             <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -405,7 +407,7 @@ export default function ActivityLogs() {
             </div>
 
             <button className="w-full mt-8 py-4 border-2 border-outline-variant/30 rounded-2xl font-display font-black text-[10px] uppercase tracking-widest text-primary hover:bg-primary/5 hover:border-primary/40 transition-all flex items-center justify-center gap-2">
-              Ver historial completo
+              {t('activity.view_all')}
             </button>
           </section>
         </div>

@@ -34,6 +34,7 @@ interface SettingItemProps {
 }
 
 function SettingItem({ title, description, icon: Icon, iconColor = "text-primary", checked, disabled, critical, onChange }: SettingItemProps) {
+  const { t } = useLanguage();
   return (
     <div className={`px-6 py-6 flex items-start justify-between gap-4 transition-all ${disabled ? 'opacity-70' : 'hover:bg-surface-container-high/40'} ${critical ? 'border-l-4 border-l-error' : ''}`}>
       <div className="flex gap-4">
@@ -44,7 +45,7 @@ function SettingItem({ title, description, icon: Icon, iconColor = "text-primary
           <h4 className="text-base font-bold text-on-surface mb-0.5">{title}</h4>
           <p className="text-xs text-on-surface-variant leading-relaxed max-w-md">
             {description}
-            {disabled && <span className="block mt-1 italic opacity-60 font-mono text-[9px] uppercase tracking-widest text-primary">Recomendado mantener activo</span>}
+            {disabled && <span className="block mt-1 italic opacity-60 font-mono text-[9px] uppercase tracking-widest text-primary">{t('settings.notif.critical.label')}</span>}
           </p>
         </div>
       </div>
@@ -182,7 +183,7 @@ export function Settings() {
                   </div>
                   <div className="text-center">
                     <p className="font-bold text-on-surface">{t('settings.theme.light')}</p>
-                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Fondo claro, alto contraste</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">{t('settings.theme.light.label')}</p>
                   </div>
                 </button>
 
@@ -199,7 +200,7 @@ export function Settings() {
                   </div>
                   <div className="text-center">
                     <p className="font-bold text-on-surface">{t('settings.theme.dark')}</p>
-                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">Tonos profundos, ahorro de batería</p>
+                    <p className="text-[10px] uppercase font-black tracking-widest opacity-60">{t('settings.theme.dark.label')}</p>
                   </div>
                 </button>
               </div>
@@ -215,8 +216,8 @@ export function Settings() {
             <div className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 overflow-hidden shadow-xl">
               <div className="divide-y divide-on-surface/5">
                 <SettingItem 
-                  title="Alertas Médicas (Críticas)"
-                  description="Recordatorios ineludibles de medicamentos y confirmaciones urgentes de citas."
+                  title={t('settings.notif.critical')}
+                  description={t('settings.notif.critical.desc')}
                   icon={Stethoscope}
                   iconColor="text-error"
                   checked={notifs.critical}
@@ -225,16 +226,16 @@ export function Settings() {
                   onChange={() => {}}
                 />
                 <SettingItem 
-                  title="Retos de Salud"
-                  description="Motivación diaria, recordatorios de pasos, hidratación y seguimiento de sueño."
+                  title={t('settings.notif.challenges')}
+                  description={t('settings.notif.challenges.desc')}
                   icon={Activity}
                   iconColor="text-primary"
                   checked={notifs.challenges}
                   onChange={(v) => setNotifs({...notifs, challenges: v})}
                 />
                 <SettingItem 
-                  title="Beneficios Premium"
-                  description="Alertas de cupones próximos a vencer, nuevos descuentos y recompensas."
+                  title={t('settings.notif.benefits')}
+                  description={t('settings.notif.benefits.desc')}
                   icon={Ticket}
                   iconColor="text-secondary"
                   checked={notifs.benefits}
@@ -251,14 +252,14 @@ export function Settings() {
           <section className="bg-surface-container-low rounded-[32px] border border-outline-variant/30 p-8 shadow-xl flex flex-col gap-6">
             <div className="flex items-center gap-3 border-b border-outline-variant/10 pb-4">
               <Timer className="w-5 h-5 text-primary" />
-              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">Canales de Entrega</h3>
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface">{t('settings.channels')}</h3>
             </div>
             
             <div className="flex flex-col gap-5">
               {[
-                { id: 'push', label: 'Push (App)', icon: Smartphone, color: 'text-primary' },
-                { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, color: 'text-secondary' },
-                { id: 'email', label: 'Correo Electrónico', icon: Mail, color: 'text-on-surface-variant' }
+                { id: 'push', label: t('settings.channels.push'), icon: Smartphone, color: 'text-primary' },
+                { id: 'whatsapp', label: t('settings.channels.whatsapp'), icon: MessageCircle, color: 'text-secondary' },
+                { id: 'email', label: t('settings.channels.email'), icon: Mail, color: 'text-on-surface-variant' }
               ].map((ch) => (
                 <div key={ch.id} className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
@@ -291,7 +292,7 @@ export function Settings() {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <History className="w-5 h-5" />
                   </div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-on-surface">Resumen Diario</h3>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-on-surface">{t('settings.summary')}</h3>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
@@ -305,11 +306,11 @@ export function Settings() {
               </div>
 
               <p className="text-xs font-medium text-on-surface-variant leading-relaxed opacity-70">
-                Agrupa notificaciones de retos y beneficios en un solo envío diario para reducir distracciones.
+                {t('settings.summary.desc')}
               </p>
 
               <div className="flex flex-col gap-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Hora de entrega</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">{t('settings.summary.time')}</span>
                 <div className="relative">
                   <select 
                     value={notifs.summaryTime}
@@ -343,8 +344,8 @@ export function Settings() {
             {saving ? <Check className="w-8 h-8 text-secondary" /> : <Bell className="w-8 h-8 text-primary" />}
           </div>
           <div>
-            <p className="text-on-surface font-black text-lg">{saving ? '¡Cambios Sincronizados!' : 'Configuración de Alertas'}</p>
-            <p className="text-xs text-on-surface-variant font-medium">Tus cambios se guardan automáticamente en tu bóveda segura.</p>
+            <p className="text-on-surface font-black text-lg">{saving ? t('settings.processed') : t('settings.config.alerts')}</p>
+            <p className="text-xs text-on-surface-variant font-medium">{t('settings.config.desc')}</p>
           </div>
         </div>
         
@@ -353,9 +354,9 @@ export function Settings() {
           disabled={saving}
           className="w-full md:w-auto bg-primary text-on-primary-fixed-variant px-10 py-5 rounded-2xl font-display font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:brightness-110 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale"
         >
-          {saving ? 'Procesando...' : (
+          {saving ? t('settings.processing') : (
             <>
-              Guardar Cambios
+              {t('settings.save')}
               <Save className="w-4 h-4" />
             </>
           )}

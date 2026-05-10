@@ -32,14 +32,23 @@ import PharmacyDiscounts from './components/membership/PharmacyDiscounts';
 import ActivityLogs from './components/membership/ActivityLogs';
 import PointsConfig from './components/membership/PointsConfig';
 import { PWAInstallPrompt } from './components/common/PWAInstallPrompt';
+import Login from './components/auth/Login';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
   const [activeTab, setActiveTab] = useState('home');
   const [regType, setRegType] = useState<'doctor' | 'clinic' | 'lab_pharmacy'>('lab_pharmacy');
 
   const openRegistration = (type: 'doctor' | 'clinic' | 'lab_pharmacy' = 'lab_pharmacy') => {
     setRegType(type);
     setActiveTab('registration');
+  };
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('isLoggedIn', 'true');
   };
 
   useEffect(() => {
@@ -115,6 +124,10 @@ export default function App() {
         );
     }
   };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <Shell activeTab={activeTab} setActiveTab={setActiveTab}>

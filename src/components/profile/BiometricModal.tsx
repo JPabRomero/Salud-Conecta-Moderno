@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Fingerprint, MonitorSmartphone, X, ShieldCheck, Asterisk, Activity } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BiometricModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface BiometricModalProps {
 type AuthStep = 'initial' | 'scanning' | 'pin' | 'success';
 
 export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const { t } = useLanguage();
   const [step, setStep] = useState<AuthStep>('initial');
   const [pin, setPin] = useState('');
 
@@ -83,10 +85,10 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
                 <Fingerprint className="w-12 h-12 text-primary" />
               </div>
               <h2 className="text-2xl font-display font-bold text-on-surface mb-3">
-                Validación Biométrica
+                {t('biometric.title')}
               </h2>
               <p className="text-sm font-medium text-on-surface-variant mb-10 px-4 leading-relaxed">
-                Escanea tu huella o usa el reconocimiento facial para desbloquear la edición de datos sensibles.
+                {t('biometric.desc')}
               </p>
               
               <div className="w-full space-y-4">
@@ -94,14 +96,14 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
                   onClick={handleStartScan}
                   className="w-full py-4 px-6 bg-primary text-on-primary rounded-2xl font-bold text-sm shadow-xl hover:bg-primary-container transition-all active:scale-[0.98]"
                 >
-                  Iniciar Escaneo
+                  {t('biometric.start')}
                 </button>
                 <button 
                   onClick={() => setStep('pin')}
                   className="w-full py-4 px-6 border border-outline-variant/30 text-on-surface font-bold text-sm rounded-2xl hover:bg-surface-container-high transition-all flex items-center justify-center gap-2"
                 >
                   <MonitorSmartphone className="w-4 h-4" />
-                  Usar PIN de seguridad
+                  {t('biometric.use_pin')}
                 </button>
               </div>
             </motion.div>
@@ -127,8 +129,8 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
                   <Fingerprint className="w-10 h-10 text-primary animate-pulse" />
                 </div>
               </div>
-              <h3 className="text-xl font-display font-bold text-on-surface mb-2">Escaneando...</h3>
-              <p className="text-xs font-mono font-bold text-primary uppercase tracking-[0.2em] animate-pulse">Verificando Biometría</p>
+              <h3 className="text-xl font-display font-bold text-on-surface mb-2">{t('biometric.scanning')}</h3>
+              <p className="text-xs font-mono font-bold text-primary uppercase tracking-[0.2em] animate-pulse">{t('biometric.verifying')}</p>
             </div>
           )}
 
@@ -141,8 +143,8 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
               <div className="w-20 h-20 rounded-full bg-surface-container-high flex items-center justify-center mb-6 border border-outline-variant/30">
                 <Asterisk className="w-8 h-8 text-outline-variant" />
               </div>
-              <h2 className="text-2xl font-display font-bold text-on-surface mb-2">Ingresar PIN</h2>
-              <p className="text-sm font-medium text-on-surface-variant mb-10">Ingresa tu código de 4 dígitos</p>
+              <h2 className="text-2xl font-display font-bold text-on-surface mb-2">{t('biometric.enter_pin')}</h2>
+              <p className="text-sm font-medium text-on-surface-variant mb-10">{t('biometric.pin_desc')}</p>
               
               <form onSubmit={handlePinSubmit} className="w-full">
                 <div className="flex justify-center gap-4 mb-10">
@@ -173,14 +175,14 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
                     disabled={pin.length !== 4}
                     className="w-full py-4 bg-primary text-on-primary rounded-2xl font-bold text-sm shadow-lg hover:bg-primary-container transition-all disabled:opacity-50"
                   >
-                    Confirmar PIN
+                    {t('biometric.confirm_pin')}
                   </button>
                   <button 
                     type="button"
                     onClick={() => setStep('initial')}
                     className="text-xs font-bold text-outline-variant uppercase tracking-widest hover:text-on-surface transition-colors p-2"
                   >
-                    Volver a biometría
+                    {t('biometric.back')}
                   </button>
                 </div>
               </form>
@@ -196,8 +198,8 @@ export const BiometricModal: React.FC<BiometricModalProps> = ({ isOpen, onClose,
               >
                 <ShieldCheck className="w-12 h-12 text-secondary" />
               </motion.div>
-              <h3 className="text-2xl font-display font-bold text-secondary mb-2">¡Validado!</h3>
-              <p className="text-sm font-medium text-on-surface-variant italic">Identidad confirmada</p>
+              <h3 className="text-2xl font-display font-bold text-secondary mb-2">{t('biometric.validated')}</h3>
+              <p className="text-sm font-medium text-on-surface-variant italic">{t('biometric.confirmed')}</p>
             </div>
           )}
         </motion.div>

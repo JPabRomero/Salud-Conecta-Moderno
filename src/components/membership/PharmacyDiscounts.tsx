@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   Search, 
   QrCode, 
@@ -16,19 +17,20 @@ import {
 } from 'lucide-react';
 
 export default function PharmacyDiscounts() {
+  const { t } = useLanguage();
   const coupons = [
     {
-      type: 'Tratamiento Crónico',
+      type: t('pharmacy.card_chronic'),
       discount: '30% OFF',
-      desc: 'Válido para medicación cardiovascular y metabólica.',
+      desc: t('pharmacy.card_chronic_desc'),
       icon: Heart,
       color: 'primary',
       timer: '04:22:15'
     },
     {
-      type: 'Farmacia General',
+      type: t('pharmacy.card_general'),
       discount: '15% OFF',
-      desc: 'Aplica a venta libre y productos de cuidado personal.',
+      desc: t('pharmacy.card_general_desc'),
       icon: ShoppingBag,
       color: 'secondary'
     }
@@ -51,12 +53,12 @@ export default function PharmacyDiscounts() {
             className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary font-black text-[10px] uppercase tracking-widest rounded-full border border-primary/20"
           >
             <Star className="w-3 h-3 fill-primary" />
-            Miembro Premium
+            {t('pharmacy.badge')}
           </motion.span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-display font-black text-on-surface">Descuentos y Beneficios en Farmacias</h1>
+        <h1 className="text-4xl md:text-5xl font-display font-black text-on-surface">{t('pharmacy.title')}</h1>
         <p className="text-lg text-on-surface-variant max-w-3xl font-medium">
-          Acceso exclusivo a precios preferenciales en medicamentos crónicos y de venta libre en nuestra red de farmacias verificadas.
+          {t('pharmacy.subtitle')}
         </p>
       </section>
 
@@ -66,12 +68,12 @@ export default function PharmacyDiscounts() {
           <Search className="w-5 h-5 text-on-surface-variant ml-4 mr-3" />
           <input 
             className="flex-grow bg-transparent border-none text-on-surface font-medium placeholder:text-outline-variant focus:ring-0" 
-            placeholder="Buscar medicamentos para ver precios premium..." 
+            placeholder={t('pharmacy.search_placeholder')} 
             type="text"
           />
           <button className="hidden sm:flex items-center gap-2 px-4 py-3 bg-surface-container-highest rounded-xl text-on-surface hover:bg-primary hover:text-on-primary-fixed-variant transition-all font-display font-black text-[10px] uppercase tracking-widest border border-outline-variant/20 ml-2">
             <QrCode className="w-4 h-4" />
-            Escanear Receta
+            {t('pharmacy.scan_prescription')}
           </button>
         </div>
       </section>
@@ -80,7 +82,7 @@ export default function PharmacyDiscounts() {
       <section className="flex flex-col gap-6">
         <div className="flex items-center gap-3">
           <Ticket className="w-6 h-6 text-secondary" />
-          <h2 className="text-xl font-display font-black text-on-surface">Mis Cupones Activos</h2>
+          <h2 className="text-xl font-display font-black text-on-surface">{t('pharmacy.my_coupons')}</h2>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -110,13 +112,13 @@ export default function PharmacyDiscounts() {
                 {coupon.timer && (
                   <div className="flex items-center gap-2 text-tertiary bg-tertiary/10 w-fit px-3 py-1 rounded-xl border border-tertiary/20">
                     <Clock className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Expira en: {coupon.timer}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{t('pharmacy.expires_in')}: {coupon.timer}</span>
                   </div>
                 )}
                 <div className="flex gap-3">
                   <button className={`flex-1 ${coupon.color === 'primary' ? 'bg-primary text-on-primary-fixed-variant' : 'bg-surface-container-high text-on-surface'} py-4 rounded-2xl font-display font-black text-[10px] uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-2`}>
                     <QrCode className="w-4 h-4" />
-                    Mostrar QR
+                    {t('pharmacy.qr_code')}
                   </button>
                   <button className="w-14 h-14 border-2 border-outline-variant/30 rounded-2xl flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-all">
                     <Copy className="w-5 h-5" />
@@ -133,10 +135,10 @@ export default function PharmacyDiscounts() {
         <div className="flex justify-between items-end">
           <div className="flex items-center gap-3">
             <Store className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-display font-black text-on-surface">Farmacias Premium Verificadas</h2>
+            <h2 className="text-xl font-display font-black text-on-surface">{t('pharmacy.verified_title')}</h2>
           </div>
           <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
-            Ver todas
+            {t('pharmacy.view_all')}
             <ArrowRight className="w-3 h-3" />
           </button>
         </div>

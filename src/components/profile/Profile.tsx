@@ -37,11 +37,28 @@ import {
   Scan
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { BiometricModal } from './BiometricModal';
 import DocumentScanner from '../history/DocumentScanner';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export function Profile() {
-  const [user] = useState(auth.currentUser);
+  const { t, language } = useLanguage();
+  const [user, setUser] = useState<any>(() => {
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) return firebaseUser;
+    
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  // Listen for auth changes to sync profile
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) setUser(u);
+    });
+    return () => unsubscribe();
+  }, []);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isValidated, setIsValidated] = useState(false);
@@ -156,6 +173,13 @@ export function Profile() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('user');
+    auth.signOut();
+    window.location.reload(); // Recarga para resetear el estado de App.tsx
+  };
+
   return (
     <div className="flex-1 w-full max-w-[800px] mx-auto px-4 md:px-6 py-10 pb-32 flex flex-col gap-10">
       {/* Header Section: Profile Overview */}
@@ -189,7 +213,7 @@ export function Profile() {
                       className="bg-primary h-full" 
                     />
                   </div>
-                  <span className="font-mono text-[10px] font-bold text-primary uppercase tracking-widest">Vista Previa</span>
+                  <span className="font-mono text-[10px] font-bold text-primary uppercase tracking-widest">{t('profile.preview')}</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -207,14 +231,14 @@ export function Profile() {
                 className="bg-primary-container text-on-primary-container px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:bg-primary transition-all active:scale-95 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                Confirmar
+                {t('profile.confirm')}
               </button>
               <button 
                 onClick={() => setIsPreviewMode(false)}
                 className="bg-surface-container-high text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-error-container hover:text-on-error-container transition-all"
               >
                 <X className="w-4 h-4" />
-                Cancelar
+                {t('profile.cancel')}
               </button>
             </motion.div>
           )}
@@ -224,7 +248,7 @@ export function Profile() {
             className="mt-4 text-outline-variant hover:text-primary text-[10px] uppercase font-bold tracking-[0.2em] flex items-center gap-2 transition-all transition-colors"
           >
             <Edit className="w-3 h-3" />
-            Cambiar Foto
+            {t('profile.change_photo')}
           </button>
         </div>
 
@@ -233,7 +257,7 @@ export function Profile() {
             {profile.name}
           </h1>
           <div className="flex items-center gap-2 mb-6">
-            <p className="text-body-md text-on-surface-variant font-medium">Paciente Frecuente</p>
+            <p className="text-body-md text-on-surface-variant font-medium">{t('profile.status.frequent')}</p>
             <div className="h-4 w-px bg-outline-variant/30 mx-1" />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
@@ -241,7 +265,7 @@ export function Profile() {
               className="flex items-center gap-1 text-secondary text-[11px] font-bold uppercase tracking-wider"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              Identidad Verificada
+              {t('profile.status.verified')}
             </motion.div>
           </div>
           
@@ -249,21 +273,21 @@ export function Profile() {
             <div className="bg-surface-container-high border border-outline-variant/30 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-inner">
               <Droplet className="text-tertiary w-5 h-5 fill-tertiary/20" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Grupo Sanguíneo</span>
+                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">{t('profile.blood')}</span>
                 <span className="text-sm font-bold text-on-surface">{profile.bloodType}</span>
               </div>
             </div>
             <div className="bg-surface-container-high border border-outline-variant/30 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-inner">
               <ShieldAlert className="text-secondary w-5 h-5" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Alergia Crítica</span>
+                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">{t('profile.allergies')}</span>
                 <span className="text-sm font-bold text-on-surface">{profile.allergies}</span>
               </div>
             </div>
             <div className="bg-surface-container-high border border-outline-variant/30 rounded-2xl px-5 py-3 flex items-center gap-3 shadow-inner">
               <Cake className="text-primary w-5 h-5" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Nacimiento</span>
+                <span className="text-[9px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">{t('profile.birth')}</span>
                 <span className="text-sm font-bold text-on-surface">{profile.dob}</span>
               </div>
             </div>
@@ -278,7 +302,7 @@ export function Profile() {
             <div className="bg-primary/20 p-2 rounded-lg">
               <User className="w-5 h-5 text-primary" />
             </div>
-            Información Personal
+            {t('profile.personal_info')}
           </h2>
           {!isValidated && (
             <button 
@@ -287,7 +311,7 @@ export function Profile() {
               className="bg-primary-container text-on-primary-container px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-primary transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-              Validar Identidad
+              {t('profile.validate')}
             </button>
           )}
         </div>
@@ -299,13 +323,13 @@ export function Profile() {
             className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 flex items-center gap-3 shadow-inner"
           >
             <Info className="w-5 h-5 text-primary shrink-0" />
-            <p className="text-xs font-medium text-on-surface-variant italic">Se requiere validación biométrica o PIN para editar información sensible</p>
+            <p className="text-xs font-medium text-on-surface-variant italic">{t('profile.validate_desc')}</p>
           </motion.div>
         )}
         
         <div className="bg-surface-container rounded-3xl p-6 md:p-8 border border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-sm">
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Teléfono</label>
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.phone')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
               <input 
@@ -323,7 +347,7 @@ export function Profile() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Correo Electrónico</label>
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.email')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
               <input 
@@ -341,7 +365,7 @@ export function Profile() {
           </div>
 
           <div className="flex flex-col gap-2 md:col-span-2">
-            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Ubicación Residencial</label>
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.address')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
               <MapPin className="absolute left-4 top-5 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
               <textarea 
@@ -366,7 +390,7 @@ export function Profile() {
               className="bg-primary-container hover:bg-primary-fixed text-on-primary-container px-8 py-4 rounded-2xl font-display font-bold text-sm shadow-xl transition-all flex items-center gap-2 group active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5 group-hover:animate-bounce" />
-              {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+              {isSaving ? t('profile.saving') : t('profile.save')}
             </button>
           </div>
         </div>
@@ -379,14 +403,14 @@ export function Profile() {
             <div className="bg-primary/20 p-2 rounded-lg">
               <Folder className="w-5 h-5 text-primary" />
             </div>
-            Documentación Médica
+            {t('profile.docs')}
           </h2>
           <button 
             onClick={() => setIsScannerOpen(true)}
             className="bg-secondary-container text-on-secondary-container px-5 py-2.5 rounded-2xl text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-secondary transition-all shadow-md active:scale-95 shadow-lg shadow-secondary/15"
           >
             <Scan className="w-4 h-4" />
-            Digitalizar Orden
+            {t('profile.scan')}
           </button>
         </div>
         
@@ -404,7 +428,7 @@ export function Profile() {
                   <ShieldAlert className="w-5 h-5 text-error shrink-0" />
                 </div>
                 <div className="flex-1 text-center sm:text-left">
-                  <p className="text-sm font-bold text-error">Problema al sincronizar</p>
+                  <p className="text-sm font-bold text-error">{t('profile.sync_error')}</p>
                   <p className="text-xs text-error/80 mt-1 leading-relaxed">{uploadError}</p>
                 </div>
                 <button 
@@ -412,7 +436,7 @@ export function Profile() {
                   className="w-full sm:w-auto px-6 py-2.5 bg-error text-on-error rounded-xl font-display font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-105 transition-all shadow-md active:scale-95"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Intentar de nuevo
+                  {t('profile.retry')}
                 </button>
               </motion.div>
             )}
@@ -427,7 +451,7 @@ export function Profile() {
                 <div className="bg-secondary/20 p-1.5 rounded-full">
                   <Check className="w-4 h-4 text-secondary" />
                 </div>
-                <p className="text-sm font-bold text-secondary">Documento sincronizado con éxito</p>
+                <p className="text-sm font-bold text-secondary">{t('profile.sync_success')}</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -497,7 +521,7 @@ export function Profile() {
                     className="flex flex-col items-center gap-1"
                   >
                     <span className="text-sm font-bold text-primary flex items-center gap-2">
-                       Sincronizando...
+                       {t('profile.saving')}
                     </span>
                     <div className="flex gap-1">
                       <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="w-1 h-1 bg-primary rounded-full" />
@@ -512,7 +536,7 @@ export function Profile() {
                     animate={{ opacity: 1 }}
                     className="text-sm font-bold text-error"
                   >
-                    Error al subir documento
+                    Error
                   </motion.p>
                 ) : (
                   <motion.div 
@@ -521,8 +545,8 @@ export function Profile() {
                     animate={{ opacity: 1 }}
                     className="flex flex-col items-center"
                   >
-                    <p className="text-sm font-bold text-on-surface">Arrastra o selecciona tus archivos</p>
-                    <p className="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-1">(Recetas, Informes, Laboratorio • Máx 10MB)</p>
+                    <p className="text-sm font-bold text-on-surface">{t('profile.upload_desc')}</p>
+                    <p className="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-1">{t('profile.upload_sub')}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -535,15 +559,15 @@ export function Profile() {
               {uploadStatus === 'uploading' ? (
                 <div className="flex items-center justify-center gap-3">
                   <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                  <span>Procesando</span>
+                  <span>{t('settings.processing')}</span>
                 </div>
-              ) : 'Seleccionar Archivos'}
+              ) : t('profile.select_files')}
             </button>
           </div>
 
           {/* File List */}
           <div className="flex flex-col gap-4">
-            <h3 className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Archivos Recientes</h3>
+            <h3 className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.recent_files')}</h3>
             <div className="grid grid-cols-1 gap-3">
               {files.map((file) => (
                 <div key={file.id} className="bg-surface-container-high border border-outline-variant/20 rounded-2xl p-4 flex items-center justify-between hover:border-primary/30 transition-all group/file shadow-sm">
@@ -557,10 +581,10 @@ export function Profile() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-xl transition-all" title="Ver">
+                    <button className="p-2 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-xl transition-all" title={t('profile.preview')}>
                       <Eye className="w-5 h-5" />
                     </button>
-                    <button className="p-2 hover:bg-error/10 text-on-surface-variant hover:text-error rounded-xl transition-all" title="Eliminar">
+                    <button className="p-2 hover:bg-error/10 text-on-surface-variant hover:text-error rounded-xl transition-all" title={t('profile.delete')}>
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
@@ -578,7 +602,7 @@ export function Profile() {
             <div className="bg-error/20 p-2 rounded-lg">
               <Phone className="w-5 h-5 text-error" />
             </div>
-            Contactos de Emergencia
+            {t('profile.emergency_contacts')}
           </h2>
           {!isValidated && (
             <button 
@@ -587,7 +611,7 @@ export function Profile() {
               className="bg-primary-container text-on-primary-container px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-primary transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-              Validar Identidad
+              {t('profile.validate')}
             </button>
           )}
         </div>
@@ -599,7 +623,7 @@ export function Profile() {
             className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-4 flex items-center gap-3 shadow-inner"
           >
             <Info className="w-5 h-5 text-primary shrink-0" />
-            <p className="text-xs font-medium text-on-surface-variant italic">Se requiere validación biométrica o PIN para editar información sensible</p>
+            <p className="text-xs font-medium text-on-surface-variant italic">{t('profile.validate_desc')}</p>
           </motion.div>
         )}
         
@@ -607,7 +631,7 @@ export function Profile() {
           {/* New Contact Form from Mockup */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col gap-2 relative">
-              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Nombre</label>
+              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.name_label')}</label>
               <input 
                 disabled={!isValidated}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
@@ -616,7 +640,7 @@ export function Profile() {
               {!isValidated && <Lock className="absolute right-3 top-[38px] w-4 h-4 text-outline-variant opacity-50" />}
             </div>
             <div className="flex flex-col gap-2 relative">
-              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Parentesco</label>
+              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.rel_label')}</label>
               <input 
                 disabled={!isValidated}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
@@ -625,7 +649,7 @@ export function Profile() {
               {!isValidated && <Lock className="absolute right-3 top-[38px] w-4 h-4 text-outline-variant opacity-50" />}
             </div>
             <div className="flex flex-col gap-2 relative">
-              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">Teléfono</label>
+              <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.phone')}</label>
               <input 
                 disabled={!isValidated}
                 className="w-full h-12 px-4 rounded-xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner disabled:opacity-50 disabled:cursor-not-allowed"
@@ -642,7 +666,7 @@ export function Profile() {
               className="bg-secondary-container hover:bg-secondary text-on-secondary-container font-label-md text-label-md rounded-xl px-8 py-3 transition-all flex items-center gap-2 shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="w-5 h-5" />
-              Añadir Contacto
+              {t('profile.add_contact')}
             </button>
           </div>
 
@@ -666,7 +690,7 @@ export function Profile() {
                      className="flex-1 sm:flex-none p-2 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest border border-transparent hover:border-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      {isValidated ? <Edit className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                     <span className="sm:hidden">Editar</span>
+                     <span className="sm:hidden">{t('profile.edit')}</span>
                    </button>
                    <button 
                      onClick={() => setEmergencyContacts(emergencyContacts.filter(c => c.id !== contact.id))}
@@ -674,7 +698,7 @@ export function Profile() {
                      className="flex-1 sm:flex-none p-2 hover:bg-error/10 text-on-surface-variant hover:text-error rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest border border-transparent hover:border-error/20 disabled:opacity-50 disabled:cursor-not-allowed"
                    >
                      {isValidated ? <Trash2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                     <span className="sm:hidden">Eliminar</span>
+                     <span className="sm:hidden">{t('profile.delete')}</span>
                    </button>
                 </div>
               </div>
@@ -688,12 +712,12 @@ export function Profile() {
             {isValidated ? (
                <>
                  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                 Añadir Contacto de Confianza
+                 {t('profile.add_trusted')}
                </>
             ) : (
               <>
                 <Lock className="w-5 h-5" />
-                Validar para añadir contactos
+                {t('profile.not_validated')}
               </>
             )}
           </button>
@@ -706,7 +730,7 @@ export function Profile() {
             <div className="bg-secondary/20 p-2 rounded-lg">
               <Activity className="w-5 h-5 text-secondary" />
             </div>
-            Configuración de Salud
+            {t('profile.health_config')}
           </h2>
           <div className="flex items-center gap-3 ml-auto">
             {!isValidated && (
@@ -716,7 +740,7 @@ export function Profile() {
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full bg-primary-container text-on-primary-container text-[10px] font-bold uppercase tracking-widest hover:bg-primary transition-all shadow-md active:scale-95 disabled:opacity-50"
               >
                 {isSaving ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                Validar Identidad
+                {t('profile.validate')}
               </button>
             )}
             <button 
@@ -724,7 +748,7 @@ export function Profile() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high border border-outline-variant/30 text-[10px] font-bold text-primary uppercase tracking-widest hover:border-primary/50 transition-all shadow-sm"
             >
               <SettingsIcon className="w-3.5 h-3.5" />
-              Notificaciones
+              {t('settings.notifications')}
             </button>
           </div>
         </div>
@@ -732,15 +756,15 @@ export function Profile() {
         <div className="flex items-center gap-2 mb-2 ml-1">
           {!isValidated ? <Info className="w-4 h-4 text-outline-variant" /> : <Check className="w-4 h-4 text-secondary" />}
           <p className="text-[10px] font-medium text-on-surface-variant italic">
-            {isValidated ? 'Identidad validada correctamente' : 'Se requiere validación biométrica o PIN para editar información sensible'}
+            {isValidated ? t('profile.validated_true') : t('profile.validate_desc')}
           </p>
         </div>
         
         <div className="bg-surface-container rounded-3xl border border-outline-variant/30 overflow-hidden divide-y divide-on-surface/10 shadow-sm">
           <div className="p-6 flex items-center justify-between hover:bg-surface-container-high transition-all">
             <div className="flex flex-col">
-              <span className="text-on-surface font-bold">Sincronización en la nube</span>
-              <span className="text-xs text-on-surface-variant mt-1">Respaldo seguro en Supabase Vault</span>
+              <span className="text-on-surface font-bold">{t('profile.sync_cloud')}</span>
+              <span className="text-xs text-on-surface-variant mt-1">{t('profile.sync_vault')}</span>
             </div>
             <div className="w-12 h-6 bg-secondary rounded-full relative shadow-inner cursor-pointer">
               <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md" />
@@ -748,8 +772,8 @@ export function Profile() {
           </div>
           <div className="p-6 flex items-center justify-between hover:bg-surface-container-high transition-all">
             <div className="flex flex-col">
-              <span className="text-on-surface font-bold">Almacenamiento Local (Modo Offline)</span>
-              <span className="text-xs text-on-surface-variant mt-1">Mantener caché vital en IndexedDB</span>
+              <span className="text-on-surface font-bold">{t('profile.local_storage')}</span>
+              <span className="text-xs text-on-surface-variant mt-1">{t('profile.indexdb')}</span>
             </div>
             <div className="w-12 h-6 bg-secondary rounded-full relative shadow-inner cursor-pointer">
               <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-md" />
@@ -780,8 +804,8 @@ export function Profile() {
               <QrCode className="w-6 h-6 text-primary" />
             </div>
             <div className="flex flex-col">
-              <span className="text-on-surface font-bold text-lg">Pasaporte de Salud</span>
-              <span className="text-xs text-on-surface-variant font-medium">Compartir acceso temporal</span>
+              <span className="text-on-surface font-bold text-lg">{t('profile.passport')}</span>
+              <span className="text-xs text-on-surface-variant font-medium">{t('profile.share_temp')}</span>
             </div>
           </div>
 
@@ -796,7 +820,7 @@ export function Profile() {
                 className="flex flex-col items-center gap-1"
               >
                 <span className="text-[10px] font-mono font-bold text-primary uppercase tracking-widest bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
-                  Código Activo
+                  {t('profile.code_active')}
                 </span>
                 <span className="text-[10px] text-on-surface-variant font-medium">Expira en {expiryTime} min</span>
               </motion.div>
@@ -809,14 +833,14 @@ export function Profile() {
               className="w-full bg-primary text-on-primary font-display font-bold py-4 rounded-2xl shadow-xl hover:bg-primary-container transition-all active:scale-95 disabled:opacity-50"
               disabled={tempQrActive}
             >
-              Generar Acceso Temporal
+              {t('profile.generate_temp')}
             </button>
             <div className="flex gap-2">
               <button className="flex-1 bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/30 text-on-surface font-display font-bold text-xs py-3 rounded-2xl transition-all">
-                Ver Mi QR
+                {t('profile.view_qr')}
               </button>
             </div>
-            <p className="text-[10px] text-on-surface-variant text-center mt-1 italic">El código temporal expira en 15 minutos</p>
+            <p className="text-[10px] text-on-surface-variant text-center mt-1 italic">{t('profile.temp_expiry')}</p>
           </div>
         </div>
 
@@ -827,16 +851,16 @@ export function Profile() {
               <ShieldCheck className="w-6 h-6 text-outline" />
             </div>
             <div className="flex flex-col">
-              <span className="text-on-surface font-bold">Cifrado de Extremo a Extremo</span>
+              <span className="text-on-surface font-bold">{t('profile.encryption')}</span>
               <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">
-                Requiere autenticación biométrica para desencriptar historial clínico y documentos locales.
+                {t('profile.encryption_desc')}
               </p>
             </div>
           </div>
           <div className="flex items-center justify-between w-full mt-auto pt-6 border-t border-on-surface/10">
-            <span className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">Estado de Cifrado</span>
+            <span className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest">{t('profile.encryption_status')}</span>
             <span className="bg-secondary/10 text-secondary px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-secondary/20 shadow-sm">
-              SISTEMA ACTIVO
+              {t('profile.system_active')}
             </span>
           </div>
         </div>
@@ -845,11 +869,11 @@ export function Profile() {
       {/* Sign Out */}
       <div className="pt-8 mb-20">
         <button 
-          onClick={() => auth.signOut()}
+          onClick={handleLogout}
           className="w-full py-5 bg-error/10 text-error rounded-[32px] border border-error/20 font-display font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-error hover:text-on-error transition-all active:scale-[0.98]"
         >
           <LogOut className="w-5 h-5" />
-          Cerrar Sesión de Salud
+          {t('profile.logout_full')}
         </button>
       </div>
 

@@ -39,11 +39,13 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
             </div>
 
             <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 leading-[1.1]">
-              {language === 'es' ? (
-                <>Eficiencia <span className="text-secondary-fixed">Empática</span> al servicio de tu salud.</>
-              ) : (
-                <>Empathetic <span className="text-secondary-fixed">Efficiency</span> at your health's service.</>
-              )}
+              <span className="text-secondary-fixed">
+                {language === 'es' ? 'Eficiencia' : 'Empathetic'}
+              </span>
+              {' '}
+              {language === 'es' ? 'Empática' : 'Efficiency'}
+              {' '}
+              {language === 'es' ? 'al servicio de tu salud.' : "at your health's service."}
             </h1>
 
             <p className="text-xl md:text-2xl text-primary-fixed mb-10 leading-relaxed font-semibold">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   Trophy,
   RefreshCw as Sync,
@@ -18,28 +19,56 @@ import {
 } from 'lucide-react';
 
 export default function HealthChallenges() {
-  const availableChallenges = [
+  const { t } = useLanguage();
+  const [timeframe, setTimeframe] = React.useState<'week' | 'month'>('week');
+
+  const availableChallenges = timeframe === 'week' ? [
     {
-      title: 'Héroe de la Hidratación',
-      desc: 'Registra 2 litros de agua diarios por 5 días consecutivos.',
+      title: t('challenges.hero_hydration'),
+      desc: t('challenges.hero_hydration_desc'),
       points: 150,
       icon: Droplets,
       color: 'text-primary',
       bg: 'bg-primary/10'
     },
     {
-      title: 'Sueño Reparador',
-      desc: 'Duerme al menos 7 horas cada noche durante toda la semana.',
+      title: t('challenges.restful_sleep'),
+      desc: t('challenges.restful_sleep_desc'),
       points: 100,
       icon: Moon,
       color: 'text-tertiary',
       bg: 'bg-tertiary/10'
     },
     {
-      title: 'Fin de Semana Activo',
-      desc: 'Realiza 60 minutos de actividad física al aire libre este fin de semana.',
+      title: t('challenges.active_weekend'),
+      desc: t('challenges.active_weekend_desc'),
       points: 250,
       icon: NaturePeople,
+      color: 'text-secondary',
+      bg: 'bg-secondary/10'
+    }
+  ] : [
+    {
+      title: t('challenges.marathon'),
+      desc: t('challenges.marathon_desc'),
+      points: 2000,
+      icon: Footprints,
+      color: 'text-primary',
+      bg: 'bg-primary/10'
+    },
+    {
+      title: t('challenges.sleep_consistency'),
+      desc: t('challenges.sleep_consistency_desc'),
+      points: 800,
+      icon: Moon,
+      color: 'text-tertiary',
+      bg: 'bg-tertiary/10'
+    },
+    {
+      title: t('challenges.mindfulness'),
+      desc: t('challenges.mindfulness_desc'),
+      points: 500,
+      icon: Activity,
       color: 'text-secondary',
       bg: 'bg-secondary/10'
     }
@@ -49,17 +78,43 @@ export default function HealthChallenges() {
     { rank: 1, name: 'Ana Martínez', level: 42, pts: '14,200', current: false },
     { rank: 2, name: 'Carlos G.', level: 38, pts: '13,850', current: false },
     { rank: 3, name: 'Elena S.', level: 35, pts: '12,100', current: false },
-    { rank: 15, name: 'Tú Perfil', level: 12, pts: '4,350', current: true },
+    { rank: 15, name: t('challenges.your_profile'), level: 12, pts: '4,350', current: true },
   ];
 
   return (
     <div className="w-full flex-grow flex flex-col gap-12 py-8 px-4 md:px-0">
       {/* Header Section */}
-      <section className="flex flex-col gap-4">
-        <h1 className="text-4xl md:text-5xl font-display font-black text-on-surface">Retos de Salud Semanales</h1>
-        <p className="text-lg text-on-surface-variant max-w-2xl font-medium">
-          Completa hábitos saludables para ganar puntos extra y mejorar tu bienestar general. Participa con la comunidad y alcanza nuevas metas.
-        </p>
+      <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="flex flex-col gap-4">
+          <h1 className="text-4xl md:text-5xl font-display font-black text-on-surface">
+            {t('challenges.title')} {timeframe === 'week' ? t('challenges.weekly') : t('challenges.monthly')}
+          </h1>
+          <p className="text-lg text-on-surface-variant max-w-2xl font-medium">
+            {t('challenges.subtitle')}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-surface-container-low border border-outline-variant/30 rounded-2xl p-1 shadow-sm shrink-0">
+          <button 
+            onClick={() => setTimeframe('week')}
+            className={`px-6 py-2 rounded-xl font-display font-black text-[10px] uppercase tracking-widest transition-all ${
+              timeframe === 'week' 
+                ? 'bg-surface-container-highest text-on-surface shadow-sm' 
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {t('activity.week')}
+          </button>
+          <button 
+            onClick={() => setTimeframe('month')}
+            className={`px-6 py-2 rounded-xl font-display font-black text-[10px] uppercase tracking-widest transition-all ${
+              timeframe === 'month' 
+                ? 'bg-surface-container-highest text-on-surface shadow-sm' 
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            {t('activity.month')}
+          </button>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -78,13 +133,13 @@ export default function HealthChallenges() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-secondary/20">Reto Actual</span>
+                  <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-secondary/20">{t('challenges.current_challenge')}</span>
                   <span className="flex items-center gap-1.5 text-primary text-[10px] font-black uppercase tracking-widest">
                     <Trophy className="w-3.5 h-3.5 fill-primary/10" /> +200 pts
                   </span>
                 </div>
-                <h2 className="text-3xl font-display font-black text-on-surface">10k Pasos Diarios</h2>
-                <p className="text-sm font-medium text-on-surface-variant max-w-md">Mantén un promedio de 10,000 pasos durante toda la semana.</p>
+                <h2 className="text-3xl font-display font-black text-on-surface">{t('challenges.steps_10k')}</h2>
+                <p className="text-sm font-medium text-on-surface-variant max-w-md">{t('challenges.steps_10k_desc')}</p>
               </div>
 
               <div className="flex items-center gap-6 w-full md:w-auto">
@@ -107,11 +162,11 @@ export default function HealthChallenges() {
 
                 <div className="flex-grow md:max-w-[200px]">
                   <div className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1.5 flex justify-between">
-                    <span>Progreso</span>
+                    <span>{t('activity.progress')}</span>
                     <span className="text-on-surface">7,450 / 10,000</span>
                   </div>
                   <button className="w-full bg-surface-container-high hover:bg-surface-bright text-primary py-3 px-4 rounded-2xl font-display font-black text-[10px] uppercase tracking-widest transition-all flex justify-center items-center gap-2 border border-outline-variant/10">
-                    <Sync className="w-3.5 h-3.5" /> Sincronizar
+                    <Sync className="w-3.5 h-3.5" /> {t('challenges.sync')}
                   </button>
                 </div>
               </div>
@@ -120,7 +175,7 @@ export default function HealthChallenges() {
 
           {/* Available Challenges Grid */}
           <section className="flex flex-col gap-6">
-            <h3 className="text-xl font-display font-black text-on-surface">Retos Disponibles</h3>
+            <h3 className="text-xl font-display font-black text-on-surface">{t('challenges.available')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {availableChallenges.map((challenge, idx) => (
                 <motion.div 
@@ -143,7 +198,7 @@ export default function HealthChallenges() {
                     <p className="text-xs font-medium text-on-surface-variant mb-6 leading-relaxed opacity-70">{challenge.desc}</p>
                   </div>
                   <button className="w-full bg-primary text-on-primary-fixed-variant py-4 rounded-2xl font-display font-black text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/10">
-                    Unirse al Reto
+                    {t('challenges.join')}
                   </button>
                 </motion.div>
               ))}
@@ -151,22 +206,22 @@ export default function HealthChallenges() {
               {/* Reminder/Coming Soon Placeholder */}
               <div className="bg-surface-container-low/50 border border-dashed border-outline-variant/30 rounded-[32px] p-6 flex flex-col items-center justify-center text-center opacity-60">
                 <Bell className="w-8 h-8 text-on-surface-variant mb-3 opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">Próximos retos en 3 días</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">{t('challenges.coming_soon')}</p>
               </div>
             </div>
           </section>
 
           {/* Achievements */}
           <section className="flex flex-col gap-6">
-            <h3 className="text-xl font-display font-black text-on-surface">Logros Recientes</h3>
+            <h3 className="text-xl font-display font-black text-on-surface">{t('challenges.achievements')}</h3>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-3 bg-surface-container-low border border-outline-variant/20 px-5 py-4 rounded-2xl opacity-80 group hover:opacity-100 transition-opacity">
                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
                   <Verified className="w-5 h-5 text-secondary fill-secondary/20" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface">Semana Perfecta</p>
-                  <p className="text-[9px] font-medium text-on-surface-variant uppercase tracking-tighter opacity-60">Completado ayer</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface">{t('challenges.perfect_week')}</p>
+                  <p className="text-[9px] font-medium text-on-surface-variant uppercase tracking-tighter opacity-60">{t('activity.completed_yesterday')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-surface-container-low border border-outline-variant/20 px-5 py-4 rounded-2xl opacity-80 group hover:opacity-100 transition-opacity">
@@ -174,8 +229,8 @@ export default function HealthChallenges() {
                   <Flame className="w-5 h-5 text-tertiary fill-tertiary/20" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface">Racha 5 Días</p>
-                  <p className="text-[9px] font-medium text-on-surface-variant uppercase tracking-tighter opacity-60">Hace 3 días</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-on-surface">{t('challenges.streak')}</p>
+                  <p className="text-[9px] font-medium text-on-surface-variant uppercase tracking-tighter opacity-60">{t('activity.3_days_ago')}</p>
                 </div>
               </div>
             </div>
@@ -192,9 +247,9 @@ export default function HealthChallenges() {
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-display font-black text-on-surface flex items-center gap-3">
                 <Leaderboard className="w-5 h-5 text-primary" />
-                Ranking Global
+                {t('challenges.ranking')}
               </h3>
-              <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Ver todos</button>
+              <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">{t('activity.view_all')}</button>
             </div>
             
             <div className="flex flex-col gap-4 flex-grow">
@@ -211,14 +266,14 @@ export default function HealthChallenges() {
                   <div className={`w-8 text-center text-xs font-black ${user.rank <= 3 ? 'text-primary' : 'text-on-surface-variant'}`}>{user.rank}</div>
                   <div className="w-11 h-11 rounded-full bg-surface-container overflow-hidden mx-3 flex-shrink-0 flex items-center justify-center border border-outline-variant/10">
                     {user.current ? (
-                      <span className="text-[10px] font-black text-primary">TÚ</span>
+                      <span className="text-[10px] font-black text-primary">{t('challenges.you')}</span>
                     ) : (
                       <User className="w-5 h-5 opacity-40" />
                     )}
                   </div>
                   <div className="flex-grow">
                     <p className={`text-sm font-bold ${user.current ? 'text-on-surface' : 'text-on-surface-variant'}`}>{user.name}</p>
-                    <p className="text-[10px] font-medium text-on-surface-variant opacity-60 uppercase tracking-widest">Nivel {user.level}</p>
+                    <p className="text-[10px] font-medium text-on-surface-variant opacity-60 uppercase tracking-widest">{t('challenges.level')} {user.level}</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-display font-black ${user.current ? 'text-on-surface' : 'text-secondary'}`}>{user.pts}</p>
@@ -232,8 +287,8 @@ export default function HealthChallenges() {
 
             <div className="mt-8 pt-6 border-t border-outline-variant/10">
               <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60 mb-3">
-                <span>Sig. Nivel: Platinum</span>
-                <span>Faltan 850 pts</span>
+                <span>{t('challenges.next_level')}: Platinum</span>
+                <span>{t('challenges.left_pts')}</span>
               </div>
               <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden shadow-inner">
                 <motion.div 
