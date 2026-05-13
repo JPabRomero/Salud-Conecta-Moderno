@@ -1,10 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_API_KEY } from "./config";
 
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+const getAI = () => {
+  if (!aiInstance) {
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "undefined") {
+      throw new Error("API key is missing. Please provide a valid API key in src/lib/config.ts");
+    }
+    aiInstance = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  }
+  return aiInstance;
+};
 
 export const getHealthAssistant = async (prompt: string, membership: 'free' | 'premium' = 'free', history: { role: string, parts: { text: string }[] }[] = []) => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
@@ -41,6 +52,7 @@ Responde siempre en español.`,
 
 export const getSmartTriage = async (symptoms: string, membership: 'free' | 'premium' = 'free') => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: symptoms }] }],
@@ -108,6 +120,7 @@ Responde siempre en español.`,
 
 export const getDailyHealthTip = async (language: string = 'es', membership: 'free' | 'premium' = 'free') => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: "Genera un consejo de salud breve, motivador y práctico para hoy." }] }],

@@ -35,7 +35,15 @@ export const signInWithGoogle = async () => {
     });
 
     if (authError.code === 'auth/unauthorized-domain') {
-       alert("Error: Este dominio no está autorizado en Firebase. \n\nInstrucciones:\n1. Ve a Firebase Console -> Authentication -> Settings -> Authorized Domains.\n2. Añade tu dominio de Vercel (ej. mi-app.vercel.app).\n3. También añade 'localhost' si pruebas localmente.");
+       const domain = typeof window !== 'undefined' ? window.location.hostname : 'este dominio';
+       alert(`Error de Autorización: Dominio No Autorizado.
+       
+El dominio "${domain}" no está en la lista de permitidos de Firebase.
+
+Por favor:
+1. Ve a Firebase Console -> Authentication -> Settings -> Authorized Domains.
+2. Añade "${domain}" a la lista.
+3. Si estás usando la vista previa de AI Studio, también añade el dominio que aparece en la barra de direcciones del navegador.`);
     } else if (authError.code === 'auth/popup-blocked') {
        alert("El navegador bloqueó la ventana emergente. Por favor, permite las ventanas emergentes para este sitio o intenta de nuevo.");
     } else {
