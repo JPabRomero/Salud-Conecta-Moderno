@@ -75,14 +75,14 @@ const createClinicIcon = (type: string, isOpen: boolean, isSelected: boolean) =>
     html: `
       <div style="
         width: 44px; height: 44px; 
-        background: ${isOpen ? color.bg : '#404753'}; 
+        background: ${(isOpen ?? true) ? color.bg : '#404753'}; 
         border: 3px solid ${isSelected ? '#fff' : color.border};
         border-radius: 14px;
         display: flex; align-items: center; justify-content: center;
         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         cursor: pointer;
         transition: all 0.3s;
-        ${!isOpen ? 'opacity: 0.6;' : ''}
+        ${!(isOpen ?? true) ? 'opacity: 0.6;' : ''}
       ">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
           ${type === 'pharmacy' 
@@ -92,17 +92,17 @@ const createClinicIcon = (type: string, isOpen: boolean, isSelected: boolean) =>
               : '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'
           }
         </svg>
-        ${!isOpen ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:11px;display:flex;align-items:center;justify-content:center"><div style="width:70%;height:2px;background:white;transform:rotate(45deg)"/></div></div>' : ''}
+        ${!(isOpen ?? true) ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:11px;display:flex;align-items:center;justify-content:center"><div style="width:70%;height:2px;background:white;transform:rotate(45deg)"/></div></div>' : ''}
       </div>
       <div style="
         width: 0; height: 0; 
         border-left: 6px solid transparent; 
         border-right: 6px solid transparent; 
-        border-top: 10px solid ${isOpen ? color.bg : '#404753'};
+        border-top: 10px solid ${(isOpen ?? true) ? color.bg : '#404753'};
         margin: -2px auto 0;
         filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
       "></div>
-      ${isOpen ? `<div style="
+      ${(isOpen ?? true) ? `<div style="
         width: 10px; height: 10px; 
         background: ${color.bg}; 
         border-radius: 50%;
