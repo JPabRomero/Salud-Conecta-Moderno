@@ -239,11 +239,11 @@ export default function TriageChecker() {
   };
 
   return (
-    <div className="flex-1 w-full bg-background min-h-screen font-sans">
-      <div className="max-w-[1400px] mx-auto h-full px-4 md:px-6 py-6">
-        <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-140px)] relative">
+    <div className="flex-1 w-full bg-background flex flex-col font-sans">
+      <div className="max-w-[1400px] mx-auto w-full flex-1 flex flex-col px-0 sm:px-4 md:px-6 sm:py-6">
+        <div className="flex-1 flex flex-col lg:flex-row gap-0 lg:gap-8 relative overflow-hidden">
           
-          <div className="flex-1 flex flex-col min-w-0 bg-surface-container-low/30 rounded-[32px] border border-outline-variant/20 overflow-hidden backdrop-blur-sm shadow-inner relative">
+          <div className="flex-1 flex flex-col min-w-0 bg-surface-container-low/30 sm:rounded-[32px] border-x border-b sm:border border-outline-variant/20 overflow-hidden backdrop-blur-sm shadow-inner relative">
             <div className="px-6 py-4 border-b border-outline-variant/20 bg-surface-container/50 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm overflow-hidden">
