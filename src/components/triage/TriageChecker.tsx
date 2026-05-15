@@ -22,7 +22,8 @@ import {
   Search,
   Map as MapIcon,
   Zap,
-  ChevronDown
+  ChevronDown,
+  Mic
 } from 'lucide-react';
 import { getSmartTriage } from '../../lib/gemini';
 import { useUser } from '../../contexts/UserContext';
@@ -68,6 +69,7 @@ export default function TriageChecker() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -148,6 +150,43 @@ export default function TriageChecker() {
     }
   };
 
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setToastMessage("Tu navegador no soporta búsqueda por voz.");
+      setToastType('error');
+      setShowToast(true);
+      return;
+    }
+    
+    if (isListening) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const handleReset = () => {
     setMessages([
       {
@@ -204,9 +243,7 @@ export default function TriageChecker() {
       <div className="max-w-[1400px] mx-auto h-full px-4 md:px-6 py-6">
         <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-140px)] relative">
           
-          {/* Left Column: Chat History */}
           <div className="flex-1 flex flex-col min-w-0 bg-surface-container-low/30 rounded-[32px] border border-outline-variant/20 overflow-hidden backdrop-blur-sm shadow-inner relative">
-            {/* Chat Header - Mobile & Desktop context */}
             <div className="px-6 py-4 border-b border-outline-variant/20 bg-surface-container/50 backdrop-blur-md flex items-center justify-between shrink-0 z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm overflow-hidden">
@@ -231,7 +268,6 @@ export default function TriageChecker() {
               </div>
             </div>
 
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto px-6 py-8 custom-scrollbar space-y-8 scroll-smooth pb-40">
               <div className="flex justify-center mb-4">
                 <span className="bg-surface-container-high/50 text-on-surface-variant px-4 py-1.5 rounded-full font-mono text-[10px] font-bold border border-outline-variant/30 uppercase tracking-[0.2em] shadow-sm">
@@ -270,7 +306,6 @@ export default function TriageChecker() {
                           {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
 
-                        {/* Mobile Result (Hidden on Desktop Analysis Board) */}
                         <div className="lg:hidden">
                           {message.type === 'result' && result && renderAnalysisBoard()}
                         </div>
@@ -304,10 +339,8 @@ export default function TriageChecker() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area: Integrated and Premium */}
             <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-surface-container-low to-transparent shrink-0 z-20">
               <div className="max-w-[800px] mx-auto bg-surface-container/95 backdrop-blur-xl rounded-[28px] p-2 border border-outline-variant/50 shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all focus-within:border-primary/50 focus-within:shadow-[0_12px_48px_rgba(46,144,250,0.2)]">
-                {/* Suggestions Row */}
                 <div className="flex gap-2 mb-2 overflow-x-auto scrollbar-hide px-2 pt-2">
                   {['Dolor de cabeza', 'Fiebre', 'Náuseas', 'Mareos', 'Tos'].map((chip) => (
                     <button
@@ -327,16 +360,33 @@ export default function TriageChecker() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                      placeholder="Describe tus síntomas detalladamente..."
-                      className="w-full h-12 pl-4 pr-12 rounded-2xl bg-surface-container-lowest/50 border border-outline-variant/20 focus:outline-none focus:ring-1 focus:ring-primary/30 text-sm font-medium transition-all placeholder:text-on-surface-variant/40"
+                      placeholder={isListening ? "Escuchando..." : "Describe tus síntomas detalladamente..."}
+                      className={`w-full h-12 pl-4 pr-24 rounded-2xl bg-surface-container-lowest/50 border transition-all placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-1 ${
+                        isListening 
+                          ? 'border-error/50 ring-error/30 bg-error/5 animate-pulse' 
+                          : 'border-outline-variant/20 focus:ring-primary/30'
+                      }`}
                     />
-                    <button
-                      onClick={() => handleSend()}
-                      disabled={!input.trim() || isTyping}
-                      className="absolute right-1.5 top-1.5 w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
+                    <div className="absolute right-1.5 top-1.5 flex items-center gap-1.5">
+                      <button
+                        onClick={toggleListening}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                          isListening 
+                            ? 'bg-error text-on-error shadow-[0_0_15px_rgba(240,68,56,0.4)] animate-pulse' 
+                            : 'bg-surface-container-high text-on-surface-variant hover:text-primary border border-outline-variant/20'
+                        }`}
+                        title="Búsqueda por voz"
+                      >
+                        <Mic className={`w-4 h-4 ${isListening ? 'animate-bounce' : ''}`} />
+                      </button>
+                      <button
+                        onClick={() => handleSend()}
+                        disabled={!input.trim() || isTyping}
+                        className="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   
                   {result && (
