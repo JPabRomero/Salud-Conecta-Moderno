@@ -459,8 +459,12 @@ function HealthMapInner({ hideMap = false }: { hideMap?: boolean }) {
       return matchesFilter;
     })
     .sort((a, b) => {
-      const distA = Math.sqrt(Math.pow(a.location.lat - userLocation.lat, 2) + Math.pow(a.location.lng - userLocation.lng, 2));
-      const distB = Math.sqrt(Math.pow(b.location.lat - userLocation.lat, 2) + Math.pow(b.location.lng - userLocation.lng, 2));
+      const aLat = a.location?.lat || 0;
+      const aLng = a.location?.lng || 0;
+      const bLat = b.location?.lat || 0;
+      const bLng = b.location?.lng || 0;
+      const distA = Math.sqrt(Math.pow(aLat - userLocation.lat, 2) + Math.pow(aLng - userLocation.lng, 2));
+      const distB = Math.sqrt(Math.pow(bLat - userLocation.lat, 2) + Math.pow(bLng - userLocation.lng, 2));
       return distA - distB;
     });
 

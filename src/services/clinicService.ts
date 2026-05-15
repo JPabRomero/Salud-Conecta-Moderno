@@ -29,7 +29,14 @@ export const getClinics = async (): Promise<Clinic[]> => {
   try {
     const q = collection(db, path);
     const snapshot = await getDocs(q);
-    const dbClinics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Clinic));
+    const dbClinics = snapshot.docs.map(doc => {
+      const data = doc.data();
+      let loc = data.location;
+      if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+        loc = { lat: loc.latitude, lng: loc.longitude };
+      }
+      return { id: doc.id, ...data, location: loc } as Clinic;
+    });
     
     // Merge static hospitals with DB clinics, avoiding duplicates by name
     const allClinics = [...dbClinics];
@@ -51,7 +58,14 @@ export const getClinicsByType = async (type: Clinic['type']): Promise<Clinic[]> 
   try {
     const q = query(collection(db, path), where('type', '==', type));
     const snapshot = await getDocs(q);
-    const dbClinics = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Clinic));
+    const dbClinics = snapshot.docs.map(doc => {
+      const data = doc.data();
+      let loc = data.location;
+      if (loc && typeof loc.latitude === 'number' && typeof loc.longitude === 'number') {
+        loc = { lat: loc.latitude, lng: loc.longitude };
+      }
+      return { id: doc.id, ...data, location: loc } as Clinic;
+    });
     
     const allClinics = [...dbClinics];
     staticClinics.filter(sc => sc.type === type).forEach(sc => {
