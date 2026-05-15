@@ -237,6 +237,8 @@ function HealthMapInner({ hideMap = false }: { hideMap?: boolean }) {
   const [filter, setFilter] = useState<'all' | 'pharmacy' | 'emergency' | 'hospital' | 'health-center' | 'laboratory' | 'clinic'>('all');
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const handleRouteUpdate = React.useCallback((leg: google.maps.DirectionsLeg) => {
     setRouteInfo({
       distance: leg.distance?.text || '',
@@ -357,6 +359,102 @@ function HealthMapInner({ hideMap = false }: { hideMap?: boolean }) {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleManualSearch = async (query: string) => {
+    if (!query.trim() || !placesLib || !map) return;
+    setIsSearching(true);
+    try {
+      const bounds = map.getBounds() || null;
+      const result = await placesLib.Place.searchByText({
+        textQuery: query,
+        fields: ['id', 'displayName', 'location', 'formattedAddress', 'types', 'nationalPhoneNumber', 'regularOpeningHours', 'rating', 'userRatingCount'],
+        locationBias: bounds,
+        maxResultCount: 10,
+      });
+
+      if (result.places && result.places.length > 0) {
+        const mappedClinics: (Clinic & { isOpen?: boolean })[] = result.places.map((p: any) => {
+          const name = p.displayName || 'Resultado de Búsqueda';
+          const types = p.types || [];
+          let clinicType: Clinic['type'] = 'clinic';
+          
+          if (types.includes('hospital')) clinicType = 'hospital';
+          else if (types.includes('pharmacy') || types.includes('drugstore')) clinicType = 'pharmacy';
+          else if (types.includes('health') || types.includes('medical_center')) clinicType = 'health-center';
+
+          return {
+            id: p.id || `search-${Math.random().toString(36).substring(2, 9)}`,
+            name: name,
+            type: clinicType,
+            sector: 'private',
+            location: {
+              lat: typeof p.location?.lat === 'function' ? p.location.lat() : (p.location?.lat || 0),
+              lng: typeof p.location?.lng === 'function' ? p.location.lng() : (p.location?.lng || 0)
+            },
+            address: p.formattedAddress || 'Nicaragua',
+            phone: p.nationalPhoneNumber || '',
+            open24h: types.includes('hospital') || (p.regularOpeningHours?.periods?.length === 1 && p.regularOpeningHours?.periods[0].open?.day === 0 && !p.regularOpeningHours?.periods[0].close),
+            isOpen: p.regularOpeningHours?.isOpen ? p.regularOpeningHours.isOpen() : true,
+            rating: p.rating,
+            reviews: p.userRatingCount
+          };
+        });
+
+        setClinics(prev => {
+          const seenIds = new Set(prev.map(c => String(c.id)));
+          const newUnique = mappedClinics.filter(c => !seenIds.has(String(c.id)));
+          return [...newUnique, ...prev];
+        });
+        
+        setIsMenuOpen(true);
+        if (mappedClinics[0]) {
+          map.panTo(mappedClinics[0].location);
+          map.setZoom(15);
+          setSelectedClinic(mappedClinics[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Manual search error:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta búsqueda por voz.");
+      return;
+    }
+    
+    if (isListening) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      handleManualSearch(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error:", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   // Real Geolocation - Priority Initialization
@@ -688,22 +786,35 @@ function HealthMapInner({ hideMap = false }: { hideMap?: boolean }) {
             <Menu className="w-6 h-6" />
           </button>
           
-          <div className="flex-1 flex items-center px-4 gap-3 cursor-pointer" onClick={() => setIsMenuOpen(true)}>
+          <div className="flex-1 flex items-center px-4 gap-3">
             <Search className="w-5 h-5 text-on-surface-variant/50" />
-            <span className="text-sm text-on-surface-variant/60 font-medium">Buscar hospitales, farmacias...</span>
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleManualSearch(searchQuery);
+              }}
+              placeholder="Buscar hospitales, farmacias..."
+              className="flex-1 bg-transparent border-none focus:outline-none text-sm text-on-surface placeholder:text-on-surface-variant/50 w-full"
+            />
           </div>
 
           <div className="flex items-center gap-1 pr-2">
             <button 
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors"
-              onClick={() => setIsMenuOpen(true)}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                isListening ? 'bg-error/20 text-error animate-pulse' : 'text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+              onClick={toggleListening}
+              title="Búsqueda por voz"
             >
               <Mic className="w-5 h-5" />
             </button>
             <div className="w-px h-6 bg-outline-variant/20 mx-1" />
             <button 
               className="w-10 h-10 rounded-xl flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors"
-              onClick={() => setIsMenuOpen(true)}
+              onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'profile' }))}
+              title="Mi Perfil"
             >
               <User className="w-5 h-5" />
             </button>
