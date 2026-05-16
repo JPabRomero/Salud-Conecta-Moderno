@@ -1239,8 +1239,6 @@ function HealthMapInner({ hideMap = false }: { hideMap?: boolean }) {
         </div>
       </div>
     </div>
-    </div>
-
       {/* Map Controls - Always Floating Bottom Right */}
       <div className="absolute bottom-[100px] md:bottom-6 right-4 md:right-6 flex flex-col gap-3 z-30 pointer-events-auto">
          <button 
