@@ -12,7 +12,7 @@ import React, { useState, useEffect } from 'react';
 import Shell from './components/layout/Shell';
 import Hero from './components/home/Hero';
 import Assistant from './components/chat/Assistant';
-// import HealthMap from './components/maps/HealthMap';
+import HealthMap from './components/maps/HealthMap';
 import Appointments from './components/appointments/Appointments';
 import History from './components/history/History';
 import TriageChecker from './components/triage/TriageChecker';
@@ -117,8 +117,7 @@ export default function App() {
       case 'search':
         return <Search onOpenRegistration={(type) => openRegistration(type)} />;
       case 'map':
-        // return <HealthMap />;
-        return <div className="p-8 text-center">Mapa temporalmente no disponible</div>;
+        return <HealthMap />;
       case 'appointments':
         return <Appointments />;
       case 'pharmacy':
