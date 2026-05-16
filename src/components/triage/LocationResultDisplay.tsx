@@ -1,5 +1,5 @@
 import React from 'react';
-import { apPinXcompass, Navigation } from 'lucide-react';
+import { MapPin, Navigation } from 'lucide-react';
 import { TriageWithLocationResult } from '../../services/triageService';
 
 interface LocationResultDisplayProps {
@@ -23,7 +23,7 @@ const severityLabels = {
 };
 
 export default function LocationResultDisplay({result, memberId, onReset}: LocationResultDisplayProps) {
-  const { emergencyInfo, facility } = result;
+  const errorEmoji = result.error ? '🤖' : warningEmoji[result.severity];
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 rounded-2xl shadow-lg border border-slate-300 dark:border-slate-700 p-6">
@@ -50,7 +50,7 @@ export default function LocationResultDisplay({result, memberId, onReset}: Locat
             result.severity === 'medium' ? 'bg-yellow-500 text-white' :
             'bg-green-500 text-white'
           }`}>
-            <span>{warningEmoji[result.severity]}</span>
+            <span>{errorEmoji}</span>
             {severityLabels[result.severity]}
           </span>
         </div>
@@ -68,7 +68,7 @@ export default function LocationResultDisplay({result, memberId, onReset}: Locat
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-l-4 border-green-500 shadow-sm">
             <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-              <apPinXcompass size={16} />
+              <MapPin size={16} />
               CENTRO DE SALUD MÁS CERCANO
             </h4>
             <p className="text-slate-800 dark:text-slate-200 font-medium">{result.locationInfo?.nearestFacility}</p>
@@ -82,7 +82,7 @@ export default function LocationResultDisplay({result, memberId, onReset}: Locat
 
           <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border-l-4 border-purple-500 shadow-sm">
             <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-              <apPinXcompass size={16} />
+              <MapPin size={16} />
               ANÁLISIS DE CÁMARA
             </h4>
             <p className="text-slate-800 dark:text-slate-200 text-sm">{result.reasoning}</p>
@@ -107,35 +107,3 @@ export default function LocationResultDisplay({result, memberId, onReset}: Locat
     </div>
   );
 }
-
-export default function LocationResultDisplay({result, memberId}: LocationResultDisplayProps) {
-  const errorEmoji = result.error ? '🤖' : warningEmoji[result.severity];
-  const severityLabels = {
-    critical: 'CRÍTICO - 🚑 SOS INMEDIATO',
-    high: 'ALTA PRIORIDAD - ⚠️ Atención Urgente',
-    medium: 'MEDIA PRIORIDAD - 🤒 Atención Médica',
-    low: 'BAJA PRIORIDAD - 🌿 Cuidado General'
-  };
-
-  if (result.error) {
-    return (
-      <div className="bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 p-4">
-        <p className="text-red-700 dark:text-red-400">
-          ❌ Error al procesar su caso. Por favor intente describir sus síntomas con más detalle.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-      {/* Header */}
-      <div className={`px-6 py-4 ${
-        result.severity === 'critical' ? 'bg-red-500' :
-        result.severity === 'high' ? 'bg-orange-500' :
-        result.severity === 'medium' ? 'bg-yellow-500' :
-        'bg-green-500'
-      }`}>
-        <div className="flex items-center justify-between">
-          <h2 className="text-white font-bold text-lg flex items-center gap-2">
-            <span className="text-2xl">{errorEmoji
