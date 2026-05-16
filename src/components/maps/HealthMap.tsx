@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { 
   MapPin, Phone, Pill, Activity, Navigation, Search, Clock, CheckCircle2, 
   Route, Target, Plus, Minus, X, ShieldAlert, Stethoscope, ChevronRight, 
-  Hospital, RefreshCw, Loader2
+  Hospital, RefreshCw, Loader2, Menu
 } from 'lucide-react';
 import { Clinic } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -126,6 +126,7 @@ export default function HealthMap() {
   const [filter, setFilter] = useState<'all' | 'pharmacy' | 'emergency' | 'hospital' | 'health-center' | 'laboratory' | 'clinic'>('all');
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [placesLib, setPlacesLib] = useState<google.maps.places.PlacesLibrary | null>(null);
 
@@ -356,73 +357,91 @@ export default function HealthMap() {
           )}
         </AnimatePresence>
 
-        <div className="absolute top-4 left-4 right-4 md:left-auto md:right-4 md:w-80 max-h-[60vh] bg-surface/95 backdrop-blur-md rounded-2xl shadow-xl border border-outline-variant/20 z-40 overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-outline-variant/20">
-            <div className="flex items-center gap-2 mb-2">
-              <Search className="w-4 h-4 text-on-surface-variant shrink-0" />
-              <input type="text" placeholder="Buscar centro de salud..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none min-w-0" />
-              {loadingPlaces && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-            </div>
-            <div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">
-              {(['all', 'hospital', 'emergency', 'health-center', 'pharmacy', 'clinic', 'laboratory'] as const).map(f => (
-                <button key={f} onClick={() => setFilter(f)}
-                  className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${filter === f ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
-                  {f === 'all' ? 'Todos' : getTypeLabel(f)}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="absolute top-4 left-4 z-40 flex flex-col gap-3 items-start">
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-12 h-12 bg-surface/95 backdrop-blur-md border border-outline-variant/20 rounded-2xl shadow-xl flex items-center justify-center hover:bg-surface-container-high transition-all text-on-surface"
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
 
-          <div className="flex items-center justify-between px-3 py-2 bg-surface-container/50 border-b border-outline-variant/10">
-            <span className="text-[10px] text-on-surface-variant">
-              {filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length} resultados
-            </span>
-            <button onClick={handleRefreshSearch} disabled={loadingPlaces} className="flex items-center gap-1 text-[10px] text-primary font-bold hover:underline disabled:opacity-50">
-              <RefreshCw className={`w-3 h-3 ${loadingPlaces ? 'animate-spin' : ''}`} />
-              Actualizar
-            </button>
-          </div>
-
-          <div className="overflow-y-auto flex-1">
-            {loading ? (
-              <div className="p-8 text-center">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
-                <p className="text-xs text-on-surface-variant">Cargando centros de salud...</p>
-              </div>
-            ) : filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-xs text-on-surface-variant">No se encontraron centros</p>
-              </div>
-            ) : (
-              filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(clinic => (
-                <button key={clinic.id} onClick={() => handleClinicSelect(clinic)}
-                  className={`w-full p-3 flex items-start gap-3 border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors ${selectedClinic?.id === clinic.id ? 'bg-primary/10' : ''}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getTypeColor(clinic.type)}`}>
-                    {clinic.type === 'pharmacy' ? <Pill className="w-4 h-4" /> : 
-                     clinic.type === 'emergency' ? <ShieldAlert className="w-4 h-4" /> : 
-                     clinic.type === 'hospital' ? <Hospital className="w-4 h-4" /> :
-                     clinic.type === 'health-center' ? <Stethoscope className="w-4 h-4" /> :
-                     clinic.type === 'laboratory' ? <Activity className="w-4 h-4" /> :
-                     <MapPin className="w-4 h-4" />}
+          <AnimatePresence>
+            {isMenuOpen && (
+              <motion.div 
+                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                className="w-[calc(100vw-2rem)] md:w-80 max-h-[60vh] bg-surface/95 backdrop-blur-md rounded-2xl shadow-xl border border-outline-variant/20 overflow-hidden flex flex-col"
+              >
+                <div className="p-3 border-b border-outline-variant/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Search className="w-4 h-4 text-on-surface-variant shrink-0" />
+                    <input type="text" placeholder="Buscar centro de salud..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none min-w-0" />
+                    {loadingPlaces && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                   </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-bold text-on-surface truncate">{clinic.name}</p>
-                    <p className="text-[10px] text-on-surface-variant truncate">{clinic.address}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${clinic.open24h || clinic.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {clinic.open24h ? '24h' : clinic.isOpen ? 'Abierto' : 'Cerrado'}
-                      </span>
-                      {clinic.sector === 'public' && <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">PÚBLICO</span>}
-                      {clinic.rating && <span className="text-[9px] text-primary">★ {clinic.rating.toFixed(1)}</span>}
-                      {clinic.reviews && <span className="text-[9px] text-on-surface-variant">({clinic.reviews})</span>}
+                  <div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">
+                    {(['all', 'hospital', 'emergency', 'health-center', 'pharmacy', 'clinic', 'laboratory'] as const).map(f => (
+                      <button key={f} onClick={() => setFilter(f)}
+                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${filter === f ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
+                        {f === 'all' ? 'Todos' : getTypeLabel(f)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between px-3 py-2 bg-surface-container/50 border-b border-outline-variant/10">
+                  <span className="text-[10px] text-on-surface-variant">
+                    {filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length} resultados
+                  </span>
+                  <button onClick={handleRefreshSearch} disabled={loadingPlaces} className="flex items-center gap-1 text-[10px] text-primary font-bold hover:underline disabled:opacity-50">
+                    <RefreshCw className={`w-3 h-3 ${loadingPlaces ? 'animate-spin' : ''}`} />
+                    Actualizar
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto flex-1">
+                  {loading ? (
+                    <div className="p-8 text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                      <p className="text-xs text-on-surface-variant">Cargando centros de salud...</p>
                     </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
-                </button>
-              ))
+                  ) : filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                    <div className="p-8 text-center">
+                      <p className="text-xs text-on-surface-variant">No se encontraron centros</p>
+                    </div>
+                  ) : (
+                    filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(clinic => (
+                      <button key={clinic.id} onClick={() => handleClinicSelect(clinic)}
+                        className={`w-full p-3 flex items-start gap-3 border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors ${selectedClinic?.id === clinic.id ? 'bg-primary/10' : ''}`}>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getTypeColor(clinic.type)}`}>
+                          {clinic.type === 'pharmacy' ? <Pill className="w-4 h-4" /> : 
+                           clinic.type === 'emergency' ? <ShieldAlert className="w-4 h-4" /> : 
+                           clinic.type === 'hospital' ? <Hospital className="w-4 h-4" /> :
+                           clinic.type === 'health-center' ? <Stethoscope className="w-4 h-4" /> :
+                           clinic.type === 'laboratory' ? <Activity className="w-4 h-4" /> :
+                           <MapPin className="w-4 h-4" />}
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <p className="text-xs font-bold text-on-surface truncate">{clinic.name}</p>
+                          <p className="text-[10px] text-on-surface-variant truncate">{clinic.address}</p>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${clinic.open24h || clinic.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                              {clinic.open24h ? '24h' : clinic.isOpen ? 'Abierto' : 'Cerrado'}
+                            </span>
+                            {clinic.sector === 'public' && <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">PÚBLICO</span>}
+                            {clinic.rating && <span className="text-[9px] text-primary">★ {clinic.rating.toFixed(1)}</span>}
+                            {clinic.reviews && <span className="text-[9px] text-on-surface-variant">({clinic.reviews})</span>}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
 
         {selectedClinic && !isNavigating && (
