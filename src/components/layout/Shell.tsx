@@ -84,6 +84,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
 
   const navItems = [
     { id: 'triage', label: t('nav.triage'), icon: Stethoscope },
+    { id: 'appointments', label: t('nav.appointments'), icon: Calendar },
     { id: 'pharmacy', label: t('nav.pharmacy'), icon: Store },
     { id: 'search', label: t('nav.search'), icon: SearchIcon },
     { id: 'rewards', label: t('nav.rewards'), icon: Trophy },
@@ -210,7 +211,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center justify-center min-w-[64px] h-full transition-all duration-300 ${
+            className={`flex flex-col items-center justify-center min-w-[56px] sm:min-w-[64px] h-full transition-all duration-300 flex-1 ${
               activeTab === item.id 
                 ? item.id === 'search' ? 'text-on-secondary-container' : 'text-primary' 
                 : 'text-on-surface-variant'
