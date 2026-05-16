@@ -34,14 +34,14 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
             animate={{ opacity: 1, y: 0, rotateX: 0 }}
             whileHover={{ rotateX: 3, rotateY: -3, scale: 1.02 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative bg-surface-container-low/40 backdrop-blur-2xl border border-outline-variant/30 shadow-2xl rounded-3xl md:rounded-[40px] p-6 sm:p-10 md:p-16 w-full text-center overflow-hidden group"
+            className="relative bg-surface-container-low/40 backdrop-blur-2xl border border-primary/20 shadow-2xl rounded-3xl md:rounded-[40px] p-6 sm:p-10 md:p-16 w-full text-center overflow-hidden group hover:border-primary/40 transition-colors"
           >
             {/* Efectos de iluminación (Glow) de fondo */}
             <div className="absolute -top-32 -right-32 w-80 h-80 bg-primary/20 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/30 transition-colors duration-700" />
             <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-secondary/20 rounded-full blur-[100px] pointer-events-none group-hover:bg-secondary/30 transition-colors duration-700" />
 
             <div className="relative z-10 flex flex-col items-center gap-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container/60 backdrop-blur-md rounded-full border border-outline-variant/30 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 backdrop-blur-md rounded-full border border-primary/20 shadow-sm">
                  <span className="w-2 h-2 rounded-full bg-hospital-green animate-pulse" />
                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">{t('hero.badge')}</span>
               </div>
@@ -69,14 +69,14 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
                 </button>
                 <button 
                   onClick={onViewMap}
-                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
+                  className="bg-surface-container-high text-primary border-2 border-primary/20 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-primary/10 hover:border-primary/40 transition-all flex items-center justify-center gap-3"
                 >
                   {t('hero.cta.secondary')}
                   <MapPin className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={onViewAppointments}
-                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
+                  className="bg-surface-container-high text-primary border-2 border-primary/20 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-primary/10 hover:border-primary/40 transition-all flex items-center justify-center gap-3"
                 >
                   Mis Citas
                   <Calendar className="w-5 h-5" />
@@ -124,7 +124,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bento-card bg-surface-container-low"
+                className="bento-card bg-surface-container-low border border-primary/10 hover:border-primary/30 hover:bg-primary/5 transition-all shadow-sm rounded-3xl p-8"
               >
                 <feature.icon className={`w-12 h-12 ${feature.color} mb-6`} />
                 <h3 className="text-2xl font-display font-bold mb-4">{feature.title}</h3>
@@ -138,7 +138,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
       </section>
 
       {/* Quick Status */}
-      <section className="py-12 bg-surface-container-lowest border-y border-outline-variant/20">
+      <section className="py-12 bg-primary/5 border-y border-primary/10">
         <div className="max-w-7xl mx-auto px-4 md:px-6 flex flex-wrap justify-around gap-8 text-center text-on-surface-variant uppercase tracking-[0.2em] text-[10px] font-bold font-mono">
             <div className="flex items-center gap-2">{t('status.network')}: <span className="text-hospital-green flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hospital-green animate-pulse" /> {t('status.active')}</span></div>
             <div>{t('status.pharmacies')}: <span className="text-primary">42 {t('status.available')}</span></div>
@@ -181,10 +181,10 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
               </button>
               <button 
                 onClick={() => onOpenRegistration('lab_pharmacy')}
-                className="group bg-surface border-2 border-secondary/20 text-on-surface px-8 py-5 rounded-2xl font-display font-black text-sm uppercase tracking-widest hover:border-secondary hover:bg-secondary/5 transition-all flex items-center gap-4"
+                className="group bg-surface border-2 border-primary/20 text-on-surface px-8 py-5 rounded-2xl font-display font-black text-sm uppercase tracking-widest hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-4"
               >
                 {t('cta.professional.business')}
-                <ArrowRight className="w-5 h-5 text-secondary" />
+                <ArrowRight className="w-5 h-5 text-primary" />
               </button>
             </div>
           </motion.div>

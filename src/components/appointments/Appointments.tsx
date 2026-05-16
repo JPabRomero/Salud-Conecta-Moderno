@@ -170,7 +170,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                 placeholder="Buscar por médico, especialidad o ubicación..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-10 py-4 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
+                className="w-full pl-12 pr-10 py-4 bg-primary/5 border border-primary/20 rounded-2xl text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm hover:border-primary/40"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-on-surface-variant hover:text-on-surface transition-colors">
@@ -193,7 +193,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                   className={`flex items-center gap-2 px-6 py-2.5 rounded-full border font-display font-bold text-xs transition-all ${
                     filter === btn.id 
                     ? 'bg-primary/10 border-primary text-primary shadow-sm' 
-                    : 'bg-surface-container-low border-outline-variant/30 text-on-surface-variant hover:bg-surface-container hover:border-primary/20'
+                    : 'bg-surface-container-low border-primary/20 text-on-surface-variant hover:bg-primary/5 hover:text-primary hover:border-primary/40'
                   }`}
                 >
                   <btn.icon className="w-3.5 h-3.5" />
@@ -213,7 +213,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
             </div>
 
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 bg-surface-container/30 rounded-3xl border border-dashed border-outline-variant/30">
+              <div className="flex flex-col items-center justify-center py-20 gap-4 bg-primary/5 rounded-3xl border border-dashed border-primary/30">
                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
                 <p className="text-sm font-bold text-on-surface-variant font-mono">Sincronizando Agenda...</p>
               </div>
@@ -306,7 +306,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
             })}
               </div>
             ) : (
-              <div className="text-center py-24 bg-surface-container-low rounded-[32px] border border-dashed border-outline-variant/30">
+              <div className="text-center py-24 bg-primary/5 rounded-[32px] border border-dashed border-primary/30">
                 <Calendar className="w-20 h-20 text-outline-variant/20 mx-auto mb-6" />
                 <h3 className="text-2xl font-display font-bold text-on-surface mb-3">Agenda Vacía</h3>
                 <p className="text-on-surface-variant max-w-sm mx-auto text-sm leading-relaxed mb-8">
@@ -333,12 +333,12 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                 Ver todo el historial
               </button>
             </div>
-            <div className="bg-surface-container rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
+            <div className="bg-surface-container rounded-2xl border border-primary/20 overflow-hidden shadow-sm hover:border-primary/40 transition-colors">
               {(triages || []).slice(0, 3).map((triage, idx) => (
                 <div 
                   key={triage.id}
-                  className={`p-5 flex justify-between items-center hover:bg-surface-container-high cursor-pointer transition-all ${
-                    idx !== 2 ? 'border-b border-outline-variant/20' : ''
+                  className={`p-5 flex justify-between items-center hover:bg-primary/5 cursor-pointer transition-all ${
+                    idx !== 2 ? 'border-b border-primary/10' : ''
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -379,7 +379,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
         {/* Sidebar (Right) */}
         <div className="lg:col-span-4 flex flex-col gap-8">
           {/* Mini Calendar Mockup */}
-          <div className="bg-surface-container rounded-3xl border border-outline-variant/30 p-6 shadow-md">
+          <div className="bg-surface-container rounded-3xl border border-primary/20 hover:border-primary/40 transition-colors p-6 shadow-md">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-display font-bold text-on-surface capitalize">{currentMonthName}</h3>
               <div className="flex gap-1">
@@ -418,7 +418,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                 );
               })}
             </div>
-            <div className="mt-8 pt-6 border-t border-outline-variant/20 flex flex-col gap-3">
+            <div className="mt-8 pt-6 border-t border-primary/20 flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <span className="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_8px_rgba(81,223,142,0.4)]" />
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest font-mono">Médico General</span>
@@ -431,7 +431,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
           </div>
 
           {/* Quick Action Card (Support Agent) */}
-          <div className="bg-gradient-to-br from-surface-container to-surface-container-high rounded-3xl border border-outline-variant/30 p-8 relative overflow-hidden shadow-xl group">
+          <div className="bg-gradient-to-br from-surface-container to-primary/10 rounded-3xl border border-primary/20 p-8 relative overflow-hidden shadow-xl group hover:border-primary/40 transition-colors">
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                <Headphones className="w-32 h-32 -mr-8 -mt-8" />
             </div>
@@ -445,7 +445,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
             <p className="text-sm text-on-surface-variant leading-relaxed mb-8 opacity-80 font-medium relative z-10">
               Si tienes problemas para encontrar una cita o requieres asistencia técnica, contacta a nuestro equipo de atención al paciente.
             </p>
-            <button className="w-full flex items-center justify-center gap-3 bg-surface-container-highest border border-outline-variant/30 text-on-surface px-6 py-4 rounded-2xl font-display font-bold text-sm hover:bg-surface-bright transition-all shadow-lg active:scale-95 relative z-10">
+            <button className="w-full flex items-center justify-center gap-3 bg-surface-container border border-primary/30 text-primary px-6 py-4 rounded-2xl font-display font-bold text-sm hover:bg-primary/10 transition-all shadow-lg active:scale-95 relative z-10">
               <Phone className="w-5 h-5 text-primary" />
               Contactar Soporte
             </button>

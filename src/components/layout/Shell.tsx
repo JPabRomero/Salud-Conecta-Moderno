@@ -146,7 +146,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
           
           <div 
             className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full overflow-hidden ml-1 shadow-inner cursor-pointer border transition-all shrink-0 ${
-              activeTab === 'profile' ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-outline-variant/50 hover:border-primary/40'
+              activeTab === 'profile' ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-primary/30 hover:border-primary hover:bg-primary/5'
             }`}
             onClick={() => user ? setActiveTab('profile') : signInWithGoogle()}
           >
