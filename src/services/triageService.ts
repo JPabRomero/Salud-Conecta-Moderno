@@ -71,9 +71,14 @@ export interface TriageWithLocationResult {
 
 export async function getEnhancedTriageWithLocation(symptoms: string, membership: 'free' | 'premium' = 'free'): Promise<TriageWithLocationResult> {
   try {
+<<<<<<< HEAD
     // Coordenadas por defecto (Managua Centro) alineadas con el mapa
     let userLat = 12.1328;
     let userLng = -86.2504;
+=======
+    let userLat = 12.122;
+    let userLng = -86.236;
+>>>>>>> bca9cc914f1f13153373447372184d8eade43b6a
     
     // Combinamos ambas redes para tener cobertura total, especialmente la pública detallada
     const fullNetwork = [...NICARAGUA_HOSPITALS, ...PUBLIC_HEALTH_NETWORK];
