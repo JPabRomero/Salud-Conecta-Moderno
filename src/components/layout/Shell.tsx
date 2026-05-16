@@ -104,48 +104,48 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
           </button>
         </div>
       )}
-      <header className={`fixed ${unauthorizedDomain ? 'top-8' : 'top-0'} left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-surface-container-low border-b border-outline-variant/30 shadow-sm transition-all duration-200`}>
+      <header className={`fixed ${unauthorizedDomain ? 'top-8' : 'top-0'} left-0 w-full z-50 flex justify-between items-center px-3 sm:px-4 h-16 bg-surface-container-low border-b border-outline-variant/30 shadow-sm transition-all duration-200`}>
         <div 
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => setActiveTab('home')}
         >
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm">
-            <Activity className="w-5 h-5" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-sm shrink-0">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <h1 className="text-lg font-bold tracking-tight text-primary">Salud Conecta IA</h1>
+          <h1 className="text-sm sm:text-lg font-bold tracking-tight text-primary truncate max-w-[110px] sm:max-w-none">Salud Conecta</h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button 
             onClick={() => setActiveTab('appointments')}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
+            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'appointments' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
             title={t('nav.appointments')}
           >
-            <Calendar className="w-5 h-5" />
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button 
             onClick={() => setActiveTab('map')}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
+            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'map' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
             title={t('header.map')}
           >
-            <Globe className="w-5 h-5" />
+            <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button 
             onClick={() => setActiveTab('activity')}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all ${
+            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-all ${
               activeTab === 'activity' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
             }`}
             title={t('header.activity')}
           >
-            <Radio className="w-5 h-5" />
+            <Radio className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           
           <div 
-            className={`w-10 h-10 flex items-center justify-center rounded-full overflow-hidden ml-1 shadow-inner cursor-pointer border transition-all ${
+            className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full overflow-hidden ml-1 shadow-inner cursor-pointer border transition-all shrink-0 ${
               activeTab === 'profile' ? 'border-primary ring-2 ring-primary/20 scale-110' : 'border-outline-variant/50 hover:border-primary/40'
             }`}
             onClick={() => user ? setActiveTab('profile') : signInWithGoogle()}
@@ -158,7 +158,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <User className="w-5 h-5 text-on-surface-variant" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-on-surface-variant" />
             )}
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
       </main>
 
       {/* BottomNavBar (Mobile Only) */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface-container-high/95 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_16px_rgba(0,0,0,0.4)] rounded-t-[32px] pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 bg-surface-container-high/95 backdrop-blur-lg border-t border-outline-variant/20 shadow-[0_-4px_16px_rgba(0,0,0,0.4)] rounded-t-[32px] pb-2">
         {navItems.map((item) => (
           <button
             key={item.id}

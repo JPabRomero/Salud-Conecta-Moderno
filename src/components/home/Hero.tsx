@@ -34,7 +34,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
             animate={{ opacity: 1, y: 0, rotateX: 0 }}
             whileHover={{ rotateX: 3, rotateY: -3, scale: 1.02 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative bg-surface-container-low/40 backdrop-blur-2xl border border-outline-variant/30 shadow-2xl rounded-[40px] p-10 md:p-16 w-full text-center overflow-hidden group"
+            className="relative bg-surface-container-low/40 backdrop-blur-2xl border border-outline-variant/30 shadow-2xl rounded-3xl md:rounded-[40px] p-6 sm:p-10 md:p-16 w-full text-center overflow-hidden group"
           >
             {/* Efectos de iluminación (Glow) de fondo */}
             <div className="absolute -top-32 -right-32 w-80 h-80 bg-primary/20 rounded-full blur-[100px] pointer-events-none group-hover:bg-primary/30 transition-colors duration-700" />
@@ -46,7 +46,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant">{t('hero.badge')}</span>
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-black tracking-tight text-on-surface leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-black tracking-tight text-on-surface leading-[1.1]">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
                   {language === 'es' ? 'Eficiencia Empática' : 'Empathetic Efficiency'}
                 </span>
@@ -55,28 +55,28 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
                 {language === 'es' ? 'al servicio de tu salud.' : "at your health's service."}
               </h1>
 
-              <p className="text-lg md:text-xl text-on-surface-variant font-medium max-w-3xl mx-auto leading-relaxed opacity-90">
+              <p className="text-base sm:text-lg md:text-xl text-on-surface-variant font-medium max-w-3xl mx-auto leading-relaxed opacity-90">
                 {t('hero.subtitle')}
               </p>
 
-              <div className="flex flex-col md:flex-row gap-4 mt-4 w-full md:w-auto justify-center flex-wrap">
+              <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full sm:w-auto justify-center flex-wrap">
                 <button 
                   onClick={onStartAssistant}
-                  className="bg-primary text-on-primary px-10 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 hover:brightness-110 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3"
+                  className="bg-primary text-on-primary px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:brightness-110 shadow-xl shadow-primary/20 transition-all flex items-center justify-center gap-3"
                 >
                   {t('hero.cta.primary')}
                   <Stethoscope className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={onViewMap}
-                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-10 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
+                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
                 >
                   {t('hero.cta.secondary')}
                   <MapPin className="w-5 h-5" />
                 </button>
                 <button 
                   onClick={onViewAppointments}
-                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-10 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
+                  className="bg-surface-container-high text-on-surface-variant border-2 border-outline-variant/30 px-6 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:scale-105 hover:bg-surface-container-highest transition-all flex items-center justify-center gap-3"
                 >
                   Mis Citas
                   <Calendar className="w-5 h-5" />
