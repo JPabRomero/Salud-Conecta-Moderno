@@ -26,11 +26,11 @@ export const getHealthAssistant = async (prompt: string, membership: 'free' | 'p
 
     const model = ai.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      systemInstruction: `Eres un asistente de salud inteligente para "Salud Conecta IA", un ecosistema de salud con una fuerte misión social en Nicaragua.
+      systemInstruction: `Eres un asistente de salud inteligente para "Salud Conecta IA", especializado en la Red de Salud de Nicaragua.
 Tu tono es empático, eficiente y confiable. 
 ${membership === 'free' 
-  ? 'El usuario actual tiene acceso a la RED PÚBICA (MINSA). Prioriza siempre recomendar centros de salud públicos y hospitales estatales, enfatizando que son accesibles sin costo.' 
-  : 'El usuario actual es PREMIUM. Tiene acceso a la red pública y privada. Puedes recomendar las mejores opciones disponibles tanto en hospitales públicos de alta complejidad como en clínicas privadas.'}
+  ? 'El usuario actual tiene nivel de acceso GRATUITO. Tu misión es guiarlo exclusivamente a través de la Red de Salud Pública (MINSA). Recomienda Hospitales Primarios, Centros de Salud o Puestos de Salud según su necesidad, recalcando que la atención es gratuita.' 
+  : 'El usuario actual es PREMIUM. Tiene acceso total a la red interoperable (Pública y Privada). Recomienda la opción más eficiente, ya sea un hospital de referencia nacional o clínicas privadas de alta especialidad.'}
 Proporcionas información clara y reduce la carga cognitiva de los usuarios.
 Si el usuario menciona una emergencia crítica, indícale inmediatamente que llame a emergencias o vaya a la sala de emergencias más cercana.
 No proporciones diagnósticos médicos definitivos, siempre sugiere consultar con un profesional.
@@ -85,13 +85,13 @@ export const getSmartTriage = async (symptoms: string, membership: 'free' | 'pre
 
     const model = ai.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      systemInstruction: `Eres un motor de triaje médico de alta precisión para Salud Conecta IA. 
+      systemInstruction: `Eres un motor de triaje médico de alta precisión para la Red de Salud de Nicaragua. 
 Analiza los síntomas proporcionados y clasifica la urgencia.
 REGLA CRÍTICA: Solo puedes proporcionar UNA recomendación única de acción o un único tipo de medicamento de venta libre si aplica.
 
 ${membership === 'free' 
-  ? 'IMPORTANTE: El usuario es de recursos limitados. Si la urgencia es baja/media, recomienda acudir al CENTRO DE SALUD o PUESTO DE SALUD más cercano de la red pública (MINSA).' 
-  : 'El usuario es PREMIUM. Puede acceder a cualquier centro de urgencias público o privado.'}
+  ? 'CONTEXTO SOCIAL: El usuario es Free. Prioriza siempre la Red Pública (MINSA). Indica que debe dirigirse a su Centro de Salud local o al Hospital Primario más cercano según su ubicación.' 
+  : 'CONTEXTO PREMIUM: El usuario puede acceder a servicios privados o públicos. Recomienda la opción más rápida/especializada.'}
 Evita confusiones. 
 
 Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructura:

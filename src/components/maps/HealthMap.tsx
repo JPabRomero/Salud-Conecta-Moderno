@@ -11,6 +11,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
 import { GOOGLE_MAPS_KEY } from "../../lib/config";
 import { getClinics } from '../../services/clinicService';
+import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
 
 const API_KEY = GOOGLE_MAPS_KEY;
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
@@ -128,6 +129,7 @@ export default function HealthMap() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [isAutoCentered, setIsAutoCentered] = useState(false);
   const [placesLib, setPlacesLib] = useState<google.maps.places.PlacesLibrary | null>(null);
 
   const placesLibrary = useMapsLibrary('places');
@@ -139,18 +141,36 @@ export default function HealthMap() {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => console.warn('Geolocation denied, using default')
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => console.warn('Geolocation error or denied:', err.message),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     }
   }, []);
+
+  // Auto-centrar el mapa una sola vez cuando se detecta la ubicación y el mapa está listo
+  useEffect(() => {
+    if (mapInstance && userLocation !== NICARAGUA_CENTER && !isAutoCentered) {
+      mapInstance.panTo(userLocation);
+      mapInstance.setZoom(15);
+      setIsAutoCentered(true);
+    }
+  }, [mapInstance, userLocation, isAutoCentered]);
 
   useEffect(() => {
     const loadClinics = async () => {
       setLoading(true);
       try {
         const dbClinics = await getClinics();
-        setClinics(dbClinics);
+        // Inyectamos la red pública de Nicaragua con IDs únicos
+        const minsaNetwork = PUBLIC_HEALTH_NETWORK.map((c, i) => ({
+          ...c,
+          id: `minsa-${i}`
+        })) as Clinic[];
+        
+        setClinics([...dbClinics, ...minsaNetwork]);
       } catch (error) {
         console.error('Error loading clinics:', error);
       } finally {
