@@ -134,6 +134,9 @@ export default function HealthMap() {
 
   const placesLibrary = useMapsLibrary('places');
 
+  const normalizeString = (str: string) => 
+    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
   useEffect(() => {
     setPlacesLib(placesLibrary || null);
   }, [placesLibrary]);
@@ -197,8 +200,7 @@ export default function HealthMap() {
         { term: 'emergencia médica', type: 'emergency' },
       ];
 
-      const newClinics: (Clinic & { isOpen?: boolean })[] = [];
-      const existingIds = new Set(clinics.map(c => c.id));
+      let updatedList = [...clinics];
 
       for (const { term, type } of searchTerms) {
         try {
@@ -220,35 +222,50 @@ export default function HealthMap() {
           });
 
           for (const place of results) {
-            if (place.geometry?.location && !existingIds.has(place.place_id || '')) {
-              const clinic: Clinic & { isOpen?: boolean } = {
-                id: `google-${place.place_id}`,
-                name: place.name || 'Sin nombre',
-                type: type as Clinic['type'],
-                sector: 'private',
-                location: {
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng(),
-                },
-                address: place.formatted_address || '',
-                phone: place.formatted_phone_number || '',
-                open24h: type === 'hospital' || type === 'emergency',
-                isOpen: true,
-                rating: place.rating,
-                reviews: place.user_ratings_total,
-              };
-              newClinics.push(clinic);
-              existingIds.add(place.place_id || '');
+            if (place.geometry?.location) {
+              const placeName = normalizeString(place.name || '');
+              const googleId = `google-${place.place_id}`;
+              
+              // Buscamos si ya existe por ID o por nombre normalizado
+              const existingIndex = updatedList.findIndex(c => 
+                c.id === googleId || normalizeString(c.name) === placeName
+              );
+
+              if (existingIndex !== -1) {
+                // Si existe, actualizamos su ubicación con la precisión de Google
+                updatedList[existingIndex] = {
+                  ...updatedList[existingIndex],
+                  location: {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng(),
+                  }
+                };
+              } else {
+                // Si es nuevo, lo añadimos
+                updatedList.push({
+                  id: googleId,
+                  name: place.name || 'Sin nombre',
+                  type: type as Clinic['type'],
+                  sector: 'private',
+                  location: {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng(),
+                  },
+                  address: place.formatted_address || '',
+                  phone: place.formatted_phone_number || '',
+                  open24h: type === 'hospital' || type === 'emergency',
+                  isOpen: true,
+                  rating: place.rating,
+                  reviews: place.user_ratings_total,
+                });
+              }
             }
           }
         } catch (err) {
           console.warn(`Search failed for ${term}:`, err);
         }
       }
-
-      if (newClinics.length > 0) {
-        setClinics(prev => [...prev, ...newClinics]);
-      }
+      setClinics(updatedList);
     } catch (error) {
       console.error('Error searching places:', error);
     } finally {
