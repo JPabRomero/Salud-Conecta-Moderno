@@ -14,6 +14,19 @@ interface HeroProps {
 export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, onOpenRegistration }: HeroProps) {
   const { t, language } = useLanguage();
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  };
+
   return (
     <div className="flex-1">
       {/* Hero Section */}
@@ -97,7 +110,13 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
             <div className="w-20 h-1 bg-medical-blue mx-auto rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {[
               {
                 icon: ShieldCheck,
@@ -120,10 +139,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
             ].map((feature, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                variants={itemVariants}
                 className="bento-card bg-surface-container-low border border-primary/10 hover:border-primary/30 hover:bg-primary/5 transition-all shadow-sm rounded-3xl p-8"
               >
                 <feature.icon className={`w-12 h-12 ${feature.color} mb-6`} />
@@ -133,7 +149,7 @@ export default function Hero({ onStartAssistant, onViewMap, onViewAppointments, 
                 </p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
