@@ -42,7 +42,6 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
   const [triages, setTriages] = useState<TriageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'doctors' | 'labs' | 'clinics'>('all');
-  const [activeTab, setActiveTab] = useState<'appointments' | 'history'>(initialTab);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmingCancel, setIsConfirmingCancel] = useState<string | null>(null);
 
@@ -65,8 +64,8 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
         getUserAppointments(uid),
         getUserTriages(uid)
       ]);
-      setAppointments(appts);
-      setTriages(trgs);
+      setAppointments(appts || []);
+      setTriages(trgs || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -109,11 +108,12 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
     );
   }
 
-  const filteredAppointments = appointments.filter(appt => {
+  const filteredAppointments = (appointments || []).filter(appt => {
     if (filter === 'all') return true;
-    if (filter === 'doctors') return appt.serviceType.toLowerCase().includes('médico') || appt.serviceType.toLowerCase().includes('cardio');
-    if (filter === 'labs') return appt.serviceType.toLowerCase().includes('laboratorio') || appt.serviceType.toLowerCase().includes('sangre');
-    if (filter === 'clinics') return appt.serviceType.toLowerCase().includes('clínica');
+    const type = (appt?.serviceType || '').toLowerCase();
+    if (filter === 'doctors') return type.includes('médico') || type.includes('cardio');
+    if (filter === 'labs') return type.includes('laboratorio') || type.includes('sangre') || type.includes('lab');
+    if (filter === 'clinics') return type.includes('clínica');
     return true;
   });
 
@@ -183,23 +183,30 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
               </div>
             ) : filteredAppointments.length > 0 ? (
               <div className="flex flex-col gap-4">
-                {filteredAppointments.map((appt) => (
-                  <motion.div
-                    key={appt.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-surface-container rounded-2xl border border-outline-variant/30 p-6 flex flex-col md:flex-row gap-6 justify-between hover:border-primary/30 transition-all shadow-sm group"
-                  >
-                    <div className="flex gap-6 items-start">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${
-                        appt.serviceType.toLowerCase().includes('sangre') || appt.serviceType.toLowerCase().includes('lab')
-                        ? 'bg-primary/5 text-primary border-primary/20'
-                        : 'bg-secondary/5 text-secondary border-secondary/20'
-                      }`}>
-                        {appt.serviceType.toLowerCase().includes('médico') || appt.serviceType.toLowerCase().includes('cardio') ? (
+            {filteredAppointments.map((appt) => {
+              const sType = (appt?.serviceType || '').toLowerCase();
+              const isLab = sType.includes('sangre') || sType.includes('lab') || sType.includes('laboratorio');
+              const isDoc = sType.includes('médico') || sType.includes('cardio');
+              const apptDate = appt?.date ? new Date(appt.date) : null;
+              const isValidDate = apptDate && !isNaN(apptDate.getTime());
+              
+              return (
+                <motion.div
+                  key={appt.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-surface-container rounded-2xl border border-outline-variant/30 p-6 flex flex-col md:flex-row gap-6 justify-between hover:border-primary/30 transition-all shadow-sm group"
+                >
+                  <div className="flex gap-6 items-start">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${
+                      isLab
+                      ? 'bg-primary/5 text-primary border-primary/20'
+                      : 'bg-secondary/5 text-secondary border-secondary/20'
+                    }`}>
+                      {isDoc ? (
                           <Stethoscope className="w-7 h-7" />
-                        ) : appt.serviceType.toLowerCase().includes('lab') || appt.serviceType.toLowerCase().includes('sangre') ? (
-                          <FlaskConical className="w-7 h-7" />
+                      ) : isLab ? (
+                        <FlaskConical className="w-7 h-7" />
                         ) : (
                           <Building2 className="w-7 h-7" />
                         )}
@@ -219,7 +226,7 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                           </span>
                         </div>
                         <h3 className="text-xl font-display font-bold text-on-surface group-hover:text-primary transition-colors">
-                          {appt.doctorName || appt.serviceType}
+                      {appt.doctorName || appt.serviceType || 'Cita Médica'}
                         </h3>
                         <p className="text-sm text-on-surface-variant flex items-center gap-1.5 opacity-80">
                           <MapPin className="w-3.5 h-3.5" />
@@ -231,10 +238,10 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                     <div className="flex flex-col justify-between items-start md:items-end gap-6 md:min-w-[140px]">
                       <div className="text-left md:text-right">
                         <p className="text-2xl font-display font-bold text-primary">
-                          {new Date(appt.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).replace('.', '')}
+                      {isValidDate ? apptDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).replace('.', '') : 'Pendiente'}
                         </p>
                         <p className="text-sm font-bold text-on-surface-variant font-mono opacity-70">
-                          {new Date(appt.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                      {isValidDate ? apptDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -253,7 +260,8 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                       </div>
                     </div>
                   </motion.div>
-                ))}
+              );
+            })}
               </div>
             ) : (
               <div className="text-center py-24 bg-surface-container-low rounded-[32px] border border-dashed border-outline-variant/30">
@@ -277,14 +285,14 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-display font-bold text-on-surface">Historial Reciente</h2>
               <button 
-                onClick={() => setActiveTab('history')}
+                onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'history' }))}
                 className="text-xs font-bold text-primary hover:underline"
               >
                 Ver todo el historial
               </button>
             </div>
             <div className="bg-surface-container rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
-              {triages.slice(0, 3).map((triage, idx) => (
+              {(triages || []).slice(0, 3).map((triage, idx) => (
                 <div 
                   key={triage.id}
                   className={`p-5 flex justify-between items-center hover:bg-surface-container-high cursor-pointer transition-all ${
@@ -297,10 +305,10 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                     </div>
                     <div>
                       <p className="font-bold text-on-surface text-sm">
-                        {triage.symptoms.length > 40 ? triage.symptoms.substring(0, 40) + '...' : triage.symptoms}
+                      {(triage.symptoms || '').length > 40 ? triage.symptoms.substring(0, 40) + '...' : (triage.symptoms || 'Sin síntomas')}
                       </p>
                       <p className="text-xs font-bold text-on-surface-variant opacity-60 font-mono mt-0.5">
-                        {new Date(triage.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {triage.createdAt ? new Date(triage.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Fecha no disponible'}
                       </p>
                     </div>
                   </div>
@@ -311,13 +319,13 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
                   </span>
                 </div>
               ))}
-              {triages.length === 0 && (
+              {(!triages || triages.length === 0) && (
                 <div className="p-12 text-center text-on-surface-variant text-sm font-medium opacity-60">
                   No hay registros de historial recientes.
                 </div>
               )}
               <button 
-                onClick={() => setActiveTab('history')}
+                onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'history' }))}
                 className="w-full py-4 bg-surface-container-high/30 text-center text-primary font-display font-bold text-xs uppercase tracking-widest hover:bg-surface-container-high transition-all border-t border-outline-variant/10"
               >
                 Ver Pasaporte de Salud Completo
@@ -345,7 +353,9 @@ export default function Appointments({ initialTab = 'appointments' }: Appointmen
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
                 const hasAppt = filteredAppointments.some(a => {
+                  if (!a?.date) return false;
                   const d = new Date(a.date);
+                  if (isNaN(d.getTime())) return false;
                   return d.getDate() === day && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
                 });
                 const isToday = day === today.getDate();
