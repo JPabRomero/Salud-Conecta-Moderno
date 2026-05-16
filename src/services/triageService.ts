@@ -1,6 +1,6 @@
-import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { TriageRecord, OperationType, FirestoreErrorInfo } from '../types';
+import { TriageRecord, OperationType, FirestoreErrorInfo, Clinic } from '../types';
 import { getCurrentLocation, getNearestFacility, getEmergencyFacilities, estimateTravelTime, calculateDistance } from '../lib/geolocationService';
 import { NICARAGUA_HOSPITALS } from '../data/nicaraguaHospitals';
 import { PUBLIC_HEALTH_NETWORK } from '../data/nicaraguaPublicHealthNetwork';
@@ -31,6 +31,21 @@ export const saveTriageRecord = async (record: Omit<TriageRecord, 'id' | 'create
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
+  }
+};
+
+export const syncClinicToFirestore = async (clinic: Clinic) => {
+  const path = 'verified_clinics';
+  try {
+    // Usamos el ID (google-xxx) como ID del documento para evitar duplicados y actuar como caché
+    const docRef = doc(db, path, clinic.id);
+    await setDoc(docRef, {
+      ...clinic,
+      updatedAt: new Date().toISOString(),
+      serverTimestamp,
+    }, { merge: true });
+  } catch (error) {
+    console.error('Error syncing clinic to cache:', error);
   }
 };
 

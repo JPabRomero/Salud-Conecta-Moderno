@@ -11,6 +11,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
 import { GOOGLE_MAPS_KEY } from "../../lib/config";
 import { getClinics } from '../../services/clinicService';
+import { syncClinicToFirestore } from '../../services/triageService';
+import { NICARAGUA_HOSPITALS } from '../../data/nicaraguaHospitals';
 import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
 
 const API_KEY = GOOGLE_MAPS_KEY;
@@ -166,14 +168,9 @@ export default function HealthMap() {
     const loadClinics = async () => {
       setLoading(true);
       try {
+        // Solo cargamos clínicas verificadas/especiales de nuestra DB de Firestore
         const dbClinics = await getClinics();
-        // Inyectamos la red pública de Nicaragua con IDs únicos
-        const minsaNetwork = PUBLIC_HEALTH_NETWORK.map((c, i) => ({
-          ...c,
-          id: `minsa-${i}`
-        })) as Clinic[];
-        
-        setClinics([...dbClinics, ...minsaNetwork]);
+        setClinics(dbClinics);
       } catch (error) {
         console.error('Error loading clinics:', error);
       } finally {
@@ -199,6 +196,11 @@ export default function HealthMap() {
         { term: 'laboratorio clínico', type: 'laboratory' },
         { term: 'emergencia médica', type: 'emergency' },
       ];
+
+      // Creamos un set de nombres normalizados de nuestra red pública para búsqueda rápida
+      const minsaReferenceNames = [...PUBLIC_HEALTH_NETWORK, ...NICARAGUA_HOSPITALS]
+        .filter(c => c.sector === 'public')
+        .map(c => normalizeString(c.name));
 
       let updatedList = [...clinics];
 
@@ -226,10 +228,34 @@ export default function HealthMap() {
               const placeName = normalizeString(place.name || '');
               const googleId = `google-${place.place_id}`;
               
-              // Buscamos si ya existe por ID o por nombre normalizado
+              // Buscamos si ya existe en la lista para no duplicar
               const existingIndex = updatedList.findIndex(c => 
                 c.id === googleId || normalizeString(c.name) === placeName
               );
+
+              // Verificamos si este lugar de Google pertenece a la red pública del MINSA
+              const isPublicMinsa = minsaReferenceNames.some(minsaName => 
+                placeName.includes(minsaName) || minsaName.includes(placeName)
+              );
+
+              // Si coincide con MINSA, sincronizamos con Firestore para persistir la ubicación correcta de Google
+              if (isPublicMinsa) {
+                syncClinicToFirestore({
+                  id: googleId,
+                  name: place.name || 'Sin nombre',
+                  type: type as Clinic['type'],
+                  sector: 'public',
+                  location: {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng(),
+                  },
+                  address: place.formatted_address || '',
+                  phone: place.formatted_phone_number || '',
+                  open24h: type === 'hospital' || type === 'emergency',
+                  rating: place.rating,
+                  reviews: place.user_ratings_total,
+                });
+              }
 
               if (existingIndex !== -1) {
                 // Si existe, actualizamos su ubicación con la precisión de Google
@@ -238,15 +264,17 @@ export default function HealthMap() {
                   location: {
                     lat: place.geometry.location.lat(),
                     lng: place.geometry.location.lng(),
-                  }
+                  },
+                  // Si lo identificamos como público en Google, mantenemos ese metadato
+                  sector: isPublicMinsa ? 'public' : updatedList[existingIndex].sector
                 };
               } else {
-                // Si es nuevo, lo añadimos
+                // Si es un sitio nuevo detectado por Google, lo agregamos con sus datos reales
                 updatedList.push({
                   id: googleId,
                   name: place.name || 'Sin nombre',
                   type: type as Clinic['type'],
-                  sector: 'private',
+                  sector: isPublicMinsa ? 'public' : 'private',
                   location: {
                     lat: place.geometry.location.lat(),
                     lng: place.geometry.location.lng(),
