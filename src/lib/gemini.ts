@@ -5,7 +5,11 @@ let aiInstance: GoogleGenAI | null = null;
 
 const getAI = () => {
   if (!aiInstance) {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "undefined" || GEMINI_API_KEY === "MISSING" || GEMINI_API_KEY === "") {
+    const isInvalidKey = !GEMINI_API_KEY || 
+                         ["undefined", "MISSING", ""].includes(GEMINI_API_KEY.trim());
+
+    if (isInvalidKey) {
+      console.warn("[AI Configuration] GEMINI_API_KEY is missing or invalid. Ensure it's set in your environment and restart the dev server.");
       return null;
     }
     aiInstance = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
