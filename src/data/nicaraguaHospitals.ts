@@ -127,13 +127,13 @@ export const NICARAGUA_HOSPITALS: Omit<Clinic, 'id'>[] = [
   },
   {
     name: "Centro de Salud Jorge Sinforoso Bravo",
-    address: "Xalteva, Granada, Nicaragua",
+    address: "Calle Atravesada, Granada, Nicaragua",
     phone: "+505 2552 4000",
     type: "health-center",
     sector: "public",
-    location: { lat: 11.93158, lng: -85.96385 }, //
-    rating: 3.7,
-    reviews: 42,
+    location: { lat: 11.93285, lng: -85.95537 },
+    rating: 4.6,
+    reviews: 10,
     imageUrl: "https://images.unsplash.com/photo-1519494083224-703c185c80a5?auto=format&fit=crop&q=80&w=1000",
     description: "Centro de salud público principal en el casco urbano de Granada.",
     services: ["Consulta Externa", "Vacunación", "Control Prenatal"],
