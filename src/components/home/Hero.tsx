@@ -27,11 +27,12 @@ export default function Hero({ onStartAssistant, onViewMap, onOpenRegistration }
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-transparent" />
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 md:px-6 relative z-10 w-full mt-10 flex justify-center">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 relative z-10 w-full mt-10 flex justify-center" style={{ perspective: "1200px" }}>
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 40, rotateX: 10 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            whileHover={{ rotateX: 3, rotateY: -3, scale: 1.02 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative bg-surface-container-low/40 backdrop-blur-2xl border border-outline-variant/30 shadow-2xl rounded-[40px] p-10 md:p-16 w-full text-center overflow-hidden group"
           >
             {/* Efectos de iluminación (Glow) de fondo */}
