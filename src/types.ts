@@ -30,7 +30,19 @@ export interface UserProfile {
 export interface Clinic {
   id: string;
   name: string;
-  type: 'clinic' | 'pharmacy' | 'emergency' | 'hospital' | 'health-center' | 'laboratory';
+  type:
+    | 'hospital-national'
+    | 'hospital-regional'
+    | 'hospital-primary'
+    | 'hospital'
+    | 'emergency'
+    | 'health-center'
+    | 'health-post'
+    | 'pharmacy'
+    | 'clinic'
+    | 'laboratory'
+    | 'dental'
+    | 'mental-health';
   sector: 'public' | 'private';
   location: {
     lat: number;

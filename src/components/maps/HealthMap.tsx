@@ -14,7 +14,7 @@ import { getClinics } from '../../services/clinicService';
 import { syncClinicToFirestore } from '../../services/triageService';
 import { NICARAGUA_HOSPITALS } from '../../data/nicaraguaHospitals';
 import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
-import { getClinicTypeDetails } from './mapUtils';
+import { getClinicTypeDetails, FILTER_OPTIONS, ALL_SEARCH_TERMS, FilterType } from './mapUtils';
 
 const API_KEY = GOOGLE_MAPS_KEY;
 const hasValidKey = Boolean(API_KEY) && API_KEY !== 'YOUR_API_KEY';
@@ -116,7 +116,7 @@ export default function HealthMap() {
   const [userLocation, setUserLocation] = useState(NICARAGUA_CENTER);
   const [isNavigating, setIsNavigating] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pharmacy' | 'emergency' | 'hospital' | 'health-center' | 'laboratory' | 'clinic'>('all');
+  const [filter, setFilter] = useState<FilterType>('all');
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -178,14 +178,7 @@ export default function HealthMap() {
       const bounds = map.getBounds();
       if (!bounds) return;
 
-      const searchTerms = [
-        { term: 'hospital', type: 'hospital' },
-        { term: 'clínica médica', type: 'clinic' },
-        { term: 'centro de salud', type: 'health-center' },
-        { term: 'farmacia', type: 'pharmacy' },
-        { term: 'laboratorio clínico', type: 'laboratory' },
-        { term: 'emergencia médica', type: 'emergency' },
-      ];
+      const searchTerms = ALL_SEARCH_TERMS;
 
       // Creamos un set de nombres normalizados de nuestra red pública (MINSA) para búsqueda rápida
       // Estos datos se usan SOLO para identificar si un lugar de Google es 'público'.
@@ -327,7 +320,12 @@ export default function HealthMap() {
     }
   }, [mapInstance, placesLib, hasValidKey, loadingPlaces, searchPlacesInArea]);
 
-  const filteredClinics = clinics.filter(c => filter === 'all' || c.type === filter);
+  const filteredClinics = clinics.filter(c => {
+    if (filter === 'all') return true;
+    // 'hospital' matches hospital-national, hospital-regional, hospital-primary and hospital
+    if (filter === 'hospital') return c.type.startsWith('hospital');
+    return c.type === filter;
+  });
 
   const handleClinicSelect = (clinic: Clinic & { isOpen?: boolean }) => {
     setSelectedClinic(clinic);
@@ -445,13 +443,33 @@ export default function HealthMap() {
                       className="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none min-w-0" />
                     {loadingPlaces && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                   </div>
-                  <div className="flex gap-1 overflow-x-auto pb-1 flex-wrap">
-                    {(['all', 'hospital', 'emergency', 'health-center', 'pharmacy', 'clinic', 'laboratory'] as const).map(f => (
-                      <button key={f} onClick={() => setFilter(f)}
-                        className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase whitespace-nowrap transition-colors ${filter === f ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}>
-                        {f === 'all' ? 'Todos' : getClinicTypeDetails(f).label}
-                      </button>
-                    ))}
+                  <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                    {FILTER_OPTIONS.map(({ value, label, labelShort }) => {
+                      const details = value !== 'all' ? getClinicTypeDetails(value) : null;
+                      const count = value === 'all'
+                        ? clinics.length
+                        : clinics.filter(c => value === 'hospital' ? c.type.startsWith('hospital') : c.type === value).length;
+                      return (
+                        <button
+                          key={value}
+                          onClick={() => setFilter(value)}
+                          title={label}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 ${
+                            filter === value
+                              ? 'bg-primary text-on-primary shadow-md'
+                              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                          }`}
+                        >
+                          {details && React.createElement(details.icon, { className: 'w-3 h-3' })}
+                          <span>{labelShort}</span>
+                          {count > 0 && (
+                            <span className={`ml-0.5 px-1 rounded-full text-[8px] font-black ${
+                              filter === value ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'
+                            }`}>{count}</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
