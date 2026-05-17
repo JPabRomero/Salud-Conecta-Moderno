@@ -34,7 +34,8 @@ import {
   FileDigit,
   CheckCircle2,
   AlertTriangle,
-  Scan
+  Scan,
+  ChevronDown
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -93,6 +94,8 @@ export function Profile() {
     }, 15000 * 60); // In a real app this would be more complex
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   // Mock data matching the UI mockup
   const [profile, setProfile] = useState({
     name: user?.displayName || 'Carlos Méndez',
@@ -101,8 +104,33 @@ export function Profile() {
     address: 'Av. Libertador 1234, Piso 5A, CABA',
     bloodType: 'O Positivo',
     allergies: 'Penicilina',
-    dob: '14 Mar 1978'
+    dob: '14 Mar 1978',
+    photoURL: user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCNjxM_kx1krlJpGAVOh-nfFDhGn7s-29GpIE4wJWRsqYWpCfOS2KwA0mDjXP283OFfd0LtGx5JPWVrYMEB1cg1irom_1Hm34eluol-cmYe4YG_wnOcjQSvXjDOPm-gtH24rSMm6i0J8uh2fP2_ixZm9Bq0yqMp4aTljcnyLHm8NYc7BeN6mABRDrlnCT35AHv-EBa3m15B2F8AG3IKN-eRA6aH-P_gNEBQ7te36sc60HjVj0KVBPIT4WPJljYhbiXnLMmBo9Tw9A"
   });
+
+  const handlePhotoClick = () => {
+    if (isValidated) {
+      fileInputRef.current?.click();
+    } else {
+      handleValidateIdentity();
+    }
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile({ ...profile, photoURL: reader.result as string });
+        setIsPreviewMode(true);
+        setToastMessage('Foto cargada. Recuerda guardar los cambios.');
+        setToastType('success');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [emergencyContacts, setEmergencyContacts] = useState([
     { id: '1', name: 'María Méndez', relationship: 'Esposa', phone: '+54 9 11 9876-5432' }
@@ -159,6 +187,19 @@ export function Profile() {
     setTimeout(() => {
       setIsSaving(false);
       setIsPreviewMode(false);
+
+      // Persist the updated details back to the active user context
+      const updatedUser = {
+        ...user,
+        displayName: profile.name,
+        photoURL: profile.photoURL
+      };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Trigger a sync event so that other components in the SPA (like header/sidebar) update dynamically
+      window.dispatchEvent(new Event('storage'));
+
       setToastMessage('Perfil actualizado correctamente');
       setToastType('success');
       setShowToast(true);
@@ -187,11 +228,22 @@ export function Profile() {
         <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         
         <div className="flex flex-col items-center shrink-0">
-          <div className="relative z-10 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-primary-container shrink-0 overflow-hidden shadow-2xl group/avatar cursor-pointer">
+          <div 
+            onClick={handlePhotoClick}
+            className="relative z-10 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-primary-container shrink-0 overflow-hidden shadow-2xl group/avatar cursor-pointer"
+          >
             <img 
               alt="Profile" 
               className="w-full h-full object-cover" 
-              src={user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCNjxM_kx1krlJpGAVOh-nfFDhGn7s-29GpIE4wJWRsqYWpCfOS2KwA0mDjXP283OFfd0LtGx5JPWVrYMEB1cg1irom_1Hm34eluol-cmYe4YG_wnOcjQSvXjDOPm-gtH24rSMm6i0J8uh2fP2_ixZm9Bq0yqMp4aTljcnyLHm8NYc7BeN6mABRDrlnCT35AHv-EBa3m15B2F8AG3IKN-eRA6aH-P_gNEBQ7te36sc60HjVj0KVBPIT4WPJljYhbiXnLMmBo9Tw9A"} 
+              src={profile.photoURL} 
+            />
+            
+            <input 
+              type="file" 
+              accept="image/*" 
+              ref={fileInputRef} 
+              onChange={handlePhotoChange} 
+              className="hidden" 
             />
             
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-200">
@@ -234,7 +286,10 @@ export function Profile() {
                 {t('profile.confirm')}
               </button>
               <button 
-                onClick={() => setIsPreviewMode(false)}
+                onClick={() => {
+                  setIsPreviewMode(false);
+                  setProfile({ ...profile, photoURL: user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCNjxM_kx1krlJpGAVOh-nfFDhGn7s-29GpIE4wJWRsqYWpCfOS2KwA0mDjXP283OFfd0LtGx5JPWVrYMEB1cg1irom_1Hm34eluol-cmYe4YG_wnOcjQSvXjDOPm-gtH24rSMm6i0J8uh2fP2_ixZm9Bq0yqMp4aTljcnyLHm8NYc7BeN6mABRDrlnCT35AHv-EBa3m15B2F8AG3IKN-eRA6aH-P_gNEBQ7te36sc60HjVj0KVBPIT4WPJljYhbiXnLMmBo9Tw9A" });
+                }}
                 className="bg-surface-container-high text-on-surface-variant px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-error-container hover:text-on-error-container transition-all"
               >
                 <X className="w-4 h-4" />
@@ -244,7 +299,7 @@ export function Profile() {
           )}
 
           <button 
-            onClick={() => setIsPreviewMode(true)}
+            onClick={handlePhotoClick}
             className="mt-4 text-outline-variant hover:text-primary text-[10px] uppercase font-bold tracking-[0.2em] flex items-center gap-2 transition-all transition-colors"
           >
             <Edit className="w-3 h-3" />
@@ -328,6 +383,45 @@ export function Profile() {
         )}
         
         <div className="bg-surface-container rounded-3xl p-6 md:p-8 border border-outline-variant/30 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-sm">
+          {/* Nombre Completo */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.name_label')}</label>
+            <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
+              <input 
+                value={profile.name}
+                onChange={(e) => setProfile({...profile, name: e.target.value})}
+                disabled={!isValidated}
+                className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner ${!isValidated ? 'cursor-not-allowed' : ''}`}
+              />
+              {!isValidated ? (
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
+              ) : (
+                <Edit className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant opacity-50" />
+              )}
+            </div>
+          </div>
+
+          {/* Fecha de Nacimiento */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.birth')}</label>
+            <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
+              <Cake className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
+              <input 
+                value={profile.dob}
+                onChange={(e) => setProfile({...profile, dob: e.target.value})}
+                disabled={!isValidated}
+                className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner ${!isValidated ? 'cursor-not-allowed' : ''}`}
+              />
+              {!isValidated ? (
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
+              ) : (
+                <Edit className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant opacity-50" />
+              )}
+            </div>
+          </div>
+
+          {/* Teléfono */}
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.phone')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
@@ -346,6 +440,7 @@ export function Profile() {
             </div>
           </div>
 
+          {/* Correo Electrónico */}
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.email')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
@@ -364,6 +459,56 @@ export function Profile() {
             </div>
           </div>
 
+          {/* Grupo Sanguíneo (Selección) */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.blood')}</label>
+            <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
+              <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors fill-outline-variant/10" />
+              <select 
+                value={profile.bloodType}
+                onChange={(e) => setProfile({...profile, bloodType: e.target.value})}
+                disabled={!isValidated}
+                className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner appearance-none ${!isValidated ? 'cursor-not-allowed' : ''}`}
+              >
+                <option value="O Positivo">O Positivo</option>
+                <option value="O Negativo">O Negativo</option>
+                <option value="A Positivo">A Positivo</option>
+                <option value="A Negativo">A Negativo</option>
+                <option value="B Positivo">B Positivo</option>
+                <option value="B Negativo">B Negativo</option>
+                <option value="AB Positivo">AB Positivo</option>
+                <option value="AB Negativo">AB Negativo</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center pointer-events-none gap-2">
+                {!isValidated ? (
+                  <Lock className="w-4 h-4 text-outline-variant" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-outline-variant opacity-50" />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Alergias Críticas */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.allergies')}</label>
+            <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
+              <ShieldAlert className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-outline-variant group-focus-within:text-primary transition-colors" />
+              <input 
+                value={profile.allergies}
+                onChange={(e) => setProfile({...profile, allergies: e.target.value})}
+                disabled={!isValidated}
+                className={`w-full h-14 pl-12 pr-12 rounded-2xl bg-surface-container-high border border-outline-variant/30 text-on-surface font-medium focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all shadow-inner ${!isValidated ? 'cursor-not-allowed' : ''}`}
+              />
+              {!isValidated ? (
+                <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
+              ) : (
+                <Edit className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant opacity-50" />
+              )}
+            </div>
+          </div>
+
+          {/* Ubicación Residencial */}
           <div className="flex flex-col gap-2 md:col-span-2">
             <label className="text-[10px] font-mono font-bold text-on-surface-variant uppercase tracking-widest ml-1">{t('profile.address')}</label>
             <div className={`relative group ${!isValidated ? 'opacity-60' : ''}`}>
