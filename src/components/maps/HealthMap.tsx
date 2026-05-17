@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { 
   MapPin, Phone, Navigation, Search, Clock,
   Target, Plus, Minus, X, ShieldAlert, ChevronRight,
-  RefreshCw, Loader2, Menu, Flag
+  RefreshCw, Loader2, Menu, Flag, Globe2
 } from 'lucide-react';
 import { Clinic } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -321,11 +321,18 @@ export default function HealthMap() {
   const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [isAutoCentered, setIsAutoCentered] = useState(false);
   const [placesLib, setPlacesLib] = useState<any>(null);
+
+  // ── Autocomplete state (Google Maps-style live search) ──────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [autocompleteLoading, setAutocompleteLoading] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteSessionRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
   const placesLibrary = useMapsLibrary('places');
 
@@ -335,6 +342,136 @@ export default function HealthMap() {
   useEffect(() => {
     setPlacesLib(placesLibrary || null);
   }, [placesLibrary]);
+
+  // ── Autocomplete: call getPlacePredictions on every keystroke ────────────
+  useEffect(() => {
+    if (!placesLib || !searchQuery.trim() || searchQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    setAutocompleteLoading(true);
+    const service = new placesLib.AutocompleteService();
+
+    // Create/reuse session token for billing optimization
+    if (!autocompleteSessionRef.current) {
+      autocompleteSessionRef.current = new placesLib.AutocompleteSessionToken();
+    }
+
+    service.getPlacePredictions(
+      {
+        input: searchQuery,
+        sessionToken: autocompleteSessionRef.current,
+        // Bias results toward the current map view
+        bounds: mapInstance?.getBounds() ?? undefined,
+        // Focus on healthcare-relevant types
+        types: ['establishment', 'health', 'hospital', 'pharmacy', 'doctor'],
+      },
+      (predictions: google.maps.places.AutocompletePrediction[] | null, status: string) => {
+        setAutocompleteLoading(false);
+        if (status === (google.maps.places as any).PlacesServiceStatus?.OK && predictions) {
+          setSuggestions(predictions);
+        } else if (predictions) {
+          setSuggestions(predictions);
+        } else {
+          setSuggestions([]);
+        }
+      }
+    );
+  }, [searchQuery, placesLib, mapInstance]);
+
+  // ── Handle suggestion selection: fetch full details + open panel ────────
+  const handleSuggestionSelect = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
+    if (!placesLib || !mapInstance) return;
+
+    // Clear autocomplete session so next query starts fresh
+    autocompleteSessionRef.current = null;
+    setSearchQuery(prediction.structured_formatting.main_text);
+    setSuggestions([]);
+    setSearchFocused(false);
+    searchInputRef.current?.blur();
+
+    const service = new placesLib.PlacesService(mapInstance);
+    service.getDetails(
+      {
+        placeId: prediction.place_id,
+        fields: [
+          'place_id', 'name', 'geometry', 'formatted_address',
+          'formatted_phone_number', 'rating', 'user_ratings_total',
+          'photos', 'opening_hours', 'website', 'price_level',
+          'wheelchair_accessible_entrance', 'types',
+        ],
+      },
+      (place: google.maps.places.PlaceResult | null, status: string) => {
+        if (!place?.geometry?.location) return;
+
+        // Pan map to place
+        mapInstance.panTo(place.geometry.location);
+        mapInstance.setZoom(17);
+
+        // Resolve photos
+        const photos: string[] = [];
+        place.photos?.slice(0, 3).forEach(ref => {
+          try { photos.push(ref.getUrl({ maxWidth: 800, maxHeight: 600 })); } catch (_) {}
+        });
+
+        // Determine type from Google place types
+        const googleTypes = place.types || [];
+        let detectedType: Clinic['type'] = 'clinic';
+        if (googleTypes.includes('hospital')) detectedType = 'hospital';
+        else if (googleTypes.includes('pharmacy')) detectedType = 'pharmacy';
+        else if (googleTypes.includes('dentist')) detectedType = 'dental';
+        else if (googleTypes.includes('doctor')) detectedType = 'clinic';
+
+        const nameLower = (place.name || '').toLowerCase();
+        if (/hospital nacional/i.test(nameLower)) detectedType = 'hospital-national';
+        else if (/hospital regional/i.test(nameLower)) detectedType = 'hospital-regional';
+        else if (/hospital primario/i.test(nameLower)) detectedType = 'hospital-primary';
+        else if (/emergencia|urgencias/i.test(nameLower)) detectedType = 'emergency';
+        else if (/centro de salud|minsa/i.test(nameLower)) detectedType = 'health-center';
+        else if (/puesto de salud/i.test(nameLower)) detectedType = 'health-post';
+        else if (/laboratorio/i.test(nameLower)) detectedType = 'laboratory';
+        else if (/salud mental|psicolog|psiquiat/i.test(nameLower)) detectedType = 'mental-health';
+
+        const isPublic = /minsa|hospital|centro de salud|puesto de salud|gobierno/i.test(nameLower);
+
+        const clinic: Clinic & { isOpen?: boolean } = {
+          id: `google-${place.place_id}`,
+          placeId: place.place_id,
+          name: place.name || 'Sin nombre',
+          type: detectedType,
+          sector: isPublic ? 'public' : 'private',
+          location: {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          },
+          address: place.formatted_address || '',
+          phone: place.formatted_phone_number || '',
+          rating: place.rating,
+          reviews: place.user_ratings_total,
+          open24h: detectedType === 'hospital' || detectedType === 'hospital-national' ||
+                   detectedType === 'hospital-regional' || detectedType === 'emergency',
+          isOpen: place.opening_hours?.isOpen?.() ?? true,
+          photos: photos.length > 0 ? photos : undefined,
+          website: (place as any).website,
+          openingHours: place.opening_hours ? {
+            isOpen: place.opening_hours.isOpen?.(),
+            weekdayText: place.opening_hours.weekday_text,
+          } : undefined,
+          wheelchairAccessible: (place as any).wheelchair_accessible_entrance,
+          priceLevel: (place as any).price_level,
+        };
+
+        // Add to clinics list and select it
+        setClinics(prev => {
+          const merged = new Map(prev.map(c => [c.id, c]));
+          merged.set(clinic.id, clinic);
+          return Array.from(merged.values());
+        });
+        setSelectedClinic(clinic);
+        setIsNavigating(false);
+      }
+    );
+  }, [placesLib, mapInstance]);
 
   // ── Geolocation ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -606,106 +743,157 @@ export default function HealthMap() {
           )}
         </AnimatePresence>
 
-        <div className="absolute top-4 left-4 z-40 flex flex-col gap-3 items-start">
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-12 h-12 bg-surface/95 backdrop-blur-md border border-outline-variant/20 rounded-2xl shadow-xl flex items-center justify-center hover:bg-surface-container-high transition-all text-on-surface"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+        {/* ── Google Maps-Style Search Bar ────────────────────────────────── */}
+        <div className="absolute top-4 left-4 right-4 z-40 flex flex-col gap-2">
 
-          <AnimatePresence>
-            {isMenuOpen && (
-              <motion.div 
-                initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -20, scale: 0.95 }}
-                className="w-[calc(100vw-2rem)] md:w-80 max-h-[60vh] bg-surface/95 backdrop-blur-md rounded-2xl shadow-xl border border-outline-variant/20 overflow-hidden flex flex-col"
+          {/* Main search bar */}
+          <div className="relative">
+            <div className={`flex items-center bg-surface/97 backdrop-blur-xl rounded-2xl shadow-2xl border transition-all duration-200 overflow-visible ${
+              searchFocused ? 'border-primary/50 shadow-primary/20' : 'border-outline-variant/20'
+            }`}>
+              {/* Search icon */}
+              <div className="pl-4 pr-3 shrink-0">
+                {autocompleteLoading
+                  ? <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                  : <Search className="w-5 h-5 text-on-surface-variant" />
+                }
+              </div>
+
+              {/* Text input */}
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                placeholder="Buscar en el mapa..."
+                className="flex-1 py-3.5 bg-transparent text-sm font-medium text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none"
+              />
+
+              {/* Clear button */}
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setSuggestions([]); searchInputRef.current?.focus(); }}
+                  className="p-2 mr-1 text-on-surface-variant hover:text-on-surface rounded-full hover:bg-surface-container transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-outline-variant/30 shrink-0" />
+
+              {/* Directions button (Google Maps style) */}
+              <button
+                onClick={() => { if (selectedClinic) setIsNavigating(true); }}
+                title="Cómo llegar"
+                className={`px-4 py-3.5 shrink-0 transition-colors ${
+                  selectedClinic
+                    ? 'text-primary hover:text-primary/80'
+                    : 'text-on-surface-variant/50 cursor-default'
+                }`}
               >
-                <div className="p-3 border-b border-outline-variant/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Search className="w-4 h-4 text-on-surface-variant shrink-0" />
-                    <input type="text" placeholder="Buscar centro de salud..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none min-w-0" />
-                    {loadingPlaces && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                  </div>
-                  <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
-                    {FILTER_OPTIONS.map(({ value, label, labelShort }) => {
-                      const details = value !== 'all' ? getClinicTypeDetails(value) : null;
-                      const count = value === 'all'
-                        ? clinics.length
-                        : clinics.filter(c => value === 'hospital' ? c.type.startsWith('hospital') : c.type === value).length;
-                      return (
-                        <button
-                          key={value}
-                          onClick={() => setFilter(value)}
-                          title={label}
-                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 ${
-                            filter === value
-                              ? 'bg-primary text-on-primary shadow-md'
-                              : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-                          }`}
-                        >
-                          {details && React.createElement(details.icon, { className: 'w-3 h-3' })}
-                          <span>{labelShort}</span>
-                          {count > 0 && (
-                            <span className={`ml-0.5 px-1 rounded-full text-[8px] font-black ${
-                              filter === value ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container-high text-on-surface-variant'
-                            }`}>{count}</span>
+                <Navigation className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* ── Autocomplete Suggestions Dropdown ───────────────────────── */}
+            <AnimatePresence>
+              {searchFocused && suggestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full mt-2 left-0 right-0 bg-surface/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-outline-variant/20 overflow-hidden z-50"
+                >
+                  {suggestions.map((pred, idx) => {
+                    const main = pred.structured_formatting.main_text;
+                    const secondary = pred.structured_formatting.secondary_text;
+                    const matchedParts = pred.structured_formatting.main_text_matched_substrings || [];
+
+                    // Highlight matched characters in the main text
+                    const renderHighlighted = () => {
+                      if (matchedParts.length === 0) return <span>{main}</span>;
+                      const parts: React.ReactNode[] = [];
+                      let cursor = 0;
+                      matchedParts.forEach((match, i) => {
+                        if (cursor < match.offset) {
+                          parts.push(<span key={`before-${i}`}>{main.slice(cursor, match.offset)}</span>);
+                        }
+                        parts.push(
+                          <span key={`match-${i}`} className="font-black text-on-surface">
+                            {main.slice(match.offset, match.offset + match.length)}
+                          </span>
+                        );
+                        cursor = match.offset + match.length;
+                      });
+                      if (cursor < main.length) parts.push(<span key="tail">{main.slice(cursor)}</span>);
+                      return <>{parts}</>;
+                    };
+
+                    return (
+                      <button
+                        key={pred.place_id}
+                        onMouseDown={() => handleSuggestionSelect(pred)}
+                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-colors text-left ${
+                          idx < suggestions.length - 1 ? 'border-b border-outline-variant/10' : ''
+                        }`}
+                      >
+                        {/* Place icon */}
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+
+                        {/* Place name + address */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-on-surface-variant leading-tight truncate">
+                            {renderHighlighted()}
+                          </p>
+                          {secondary && (
+                            <p className="text-[11px] text-on-surface-variant/60 truncate mt-0.5">{secondary}</p>
                           )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between px-3 py-2 bg-surface-container/50 border-b border-outline-variant/10">
-                  <span className="text-[10px] text-on-surface-variant">
-                    {filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length} resultados
-                  </span>
-                  <button onClick={handleRefreshSearch} disabled={loadingPlaces} className="flex items-center gap-1 text-[10px] text-primary font-bold hover:underline disabled:opacity-50">
-                    <RefreshCw className={`w-3 h-3 ${loadingPlaces ? 'animate-spin' : ''}`} />
-                    Actualizar
-                  </button>
-                </div>
-
-                <div className="overflow-y-auto flex-1">
-                  {loading ? (
-                    <div className="p-8 text-center">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
-                      <p className="text-xs text-on-surface-variant">Cargando centros de salud...</p>
-                    </div>
-                  ) : filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-                    <div className="p-8 text-center">
-                      <p className="text-xs text-on-surface-variant">No se encontraron centros</p>
-                    </div>
-                  ) : (
-                    filteredClinics.filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())).map(clinic => (
-                      <button key={clinic.id} onClick={() => handleClinicSelect(clinic)}
-                        className={`w-full p-3 flex items-start gap-3 border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors ${selectedClinic?.id === clinic.id ? 'bg-primary/10' : ''}`}>
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getClinicTypeDetails(clinic.type).colorClasses}`}>
-                          {React.createElement(getClinicTypeDetails(clinic.type).icon, { className: "w-4 h-4" })}
                         </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="text-xs font-bold text-on-surface truncate">{clinic.name}</p>
-                          <p className="text-[10px] text-on-surface-variant truncate">{clinic.address}</p>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${clinic.open24h || clinic.isOpen ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {clinic.open24h ? '24h' : clinic.isOpen ? 'Abierto' : 'Cerrado'}
-                            </span>
-                            {clinic.sector === 'public' && <span className="text-[9px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">PÚBLICO</span>}
-                            {clinic.rating && <span className="text-[9px] text-primary">★ {clinic.rating.toFixed(1)}</span>}
-                            {clinic.reviews && <span className="text-[9px] text-on-surface-variant">({clinic.reviews})</span>}
-                          </div>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-on-surface-variant shrink-0" />
+
+                        <ChevronRight className="w-4 h-4 text-on-surface-variant/40 shrink-0" />
                       </button>
-                    ))
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── Category filter chips row ────────────────────────────────── */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            {FILTER_OPTIONS.map(({ value, label, labelShort }) => {
+              const details = value !== 'all' ? getClinicTypeDetails(value) : null;
+              const count = value === 'all'
+                ? clinics.length
+                : clinics.filter(c => value === 'hospital' ? c.type.startsWith('hospital') : c.type === value).length;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  title={label}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all shrink-0 shadow-sm backdrop-blur-sm ${
+                    filter === value
+                      ? 'bg-primary text-on-primary shadow-primary/30'
+                      : 'bg-surface/90 text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/20'
+                  }`}
+                >
+                  {details && React.createElement(details.icon, { className: 'w-3 h-3' })}
+                  <span>{labelShort}</span>
+                  {count > 0 && (
+                    <span className={`ml-0.5 px-1.5 rounded-full text-[9px] font-black ${
+                      filter === value ? 'bg-on-primary/20 text-on-primary' : 'bg-surface-container text-on-surface-variant'
+                    }`}>{count}</span>
                   )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {selectedClinic && !isNavigating && (
