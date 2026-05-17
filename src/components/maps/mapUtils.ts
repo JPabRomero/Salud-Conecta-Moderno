@@ -25,7 +25,10 @@ interface TypeDetails {
   icon: React.ElementType;
   colorClasses: string;
   markerColors: { bg: string; border: string };
-  searchTerms: string[];  // términos para Google Places API
+  /** Términos de búsqueda para Google Places textSearch */
+  searchTerms: string[];
+  /** Tipos de lugar de Google Places para refinar resultados (opcional) */
+  googleTypes?: string[];
 }
 
 const TYPE_CONFIG: Record<string, TypeDetails> = {
@@ -36,6 +39,7 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     colorClasses: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     markerColors: { bg: '#DC2626', border: '#991b1b' },
     searchTerms: ['hospital nacional'],
+    googleTypes: ['hospital'],
   },
   'hospital-regional': {
     label: 'Hospital Regional',
@@ -44,6 +48,7 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     colorClasses: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     markerColors: { bg: '#EA580C', border: '#c2410c' },
     searchTerms: ['hospital regional'],
+    googleTypes: ['hospital'],
   },
   'hospital-primary': {
     label: 'Hospital Primario',
@@ -52,6 +57,7 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     colorClasses: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     markerColors: { bg: '#D97706', border: '#b45309' },
     searchTerms: ['hospital primario'],
+    googleTypes: ['hospital'],
   },
   'hospital': {
     label: 'Hospital',
@@ -60,6 +66,7 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     colorClasses: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     markerColors: { bg: '#2563EB', border: '#1d4ed8' },
     searchTerms: ['hospital'],
+    googleTypes: ['hospital'],
   },
   'emergency': {
     label: 'Emergencia',
@@ -67,7 +74,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: ShieldAlert,
     colorClasses: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     markerColors: { bg: '#EF4444', border: '#b91c1c' },
-    searchTerms: ['emergencia médica', 'sala de emergencias'],
+    searchTerms: ['emergencia médica', 'sala de emergencias', 'urgencias médicas'],
+    googleTypes: ['hospital', 'health'],
   },
   'health-center': {
     label: 'Centro de Salud',
@@ -75,7 +83,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: Cross,
     colorClasses: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     markerColors: { bg: '#059669', border: '#047857' },
-    searchTerms: ['centro de salud'],
+    searchTerms: ['centro de salud', 'MINSA', 'centro médico público'],
+    googleTypes: ['health', 'doctor'],
   },
   'health-post': {
     label: 'Puesto de Salud',
@@ -83,7 +92,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: MapPin,
     colorClasses: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
     markerColors: { bg: '#0D9488', border: '#0f766e' },
-    searchTerms: ['puesto de salud', 'puesto médico'],
+    searchTerms: ['puesto de salud', 'puesto médico', 'dispensario médico'],
+    googleTypes: ['health'],
   },
   'pharmacy': {
     label: 'Farmacia',
@@ -91,7 +101,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: Pill,
     colorClasses: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     markerColors: { bg: '#16A34A', border: '#15803d' },
-    searchTerms: ['farmacia'],
+    searchTerms: ['farmacia', 'droguería', 'farmacia y droguería'],
+    googleTypes: ['pharmacy'],
   },
   'clinic': {
     label: 'Clínica',
@@ -99,7 +110,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: Stethoscope,
     colorClasses: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
     markerColors: { bg: '#7C3AED', border: '#6d28d9' },
-    searchTerms: ['clínica médica', 'clínica privada'],
+    searchTerms: ['clínica médica', 'clínica privada', 'consultorio médico'],
+    googleTypes: ['doctor', 'health'],
   },
   'laboratory': {
     label: 'Laboratorio',
@@ -107,7 +119,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: Activity,
     colorClasses: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     markerColors: { bg: '#F59E0B', border: '#d97706' },
-    searchTerms: ['laboratorio clínico', 'laboratorio médico'],
+    searchTerms: ['laboratorio clínico', 'laboratorio médico', 'laboratorio de análisis'],
+    googleTypes: ['health'],
   },
   'dental': {
     label: 'Clínica Dental',
@@ -115,7 +128,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: SmilePlus,
     colorClasses: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
     markerColors: { bg: '#DB2777', border: '#be185d' },
-    searchTerms: ['clínica dental', 'dentista', 'odontología'],
+    searchTerms: ['clínica dental', 'dentista', 'odontología', 'consultorio dental'],
+    googleTypes: ['dentist'],
   },
   'mental-health': {
     label: 'Salud Mental',
@@ -123,7 +137,8 @@ const TYPE_CONFIG: Record<string, TypeDetails> = {
     icon: Brain,
     colorClasses: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
     markerColors: { bg: '#4F46E5', border: '#4338ca' },
-    searchTerms: ['salud mental', 'psicología', 'psiquiatría'],
+    searchTerms: ['salud mental', 'psicología', 'psiquiatría', 'psicólogo'],
+    googleTypes: ['doctor', 'health'],
   },
   default: {
     label: 'Ubicación',
@@ -140,23 +155,32 @@ export const getClinicTypeDetails = (type: string): TypeDetails =>
 
 /** Lista ordenada de todos los filtros con sus etiquetas */
 export const FILTER_OPTIONS: { value: FilterType; label: string; labelShort: string }[] = [
-  { value: 'all',               label: 'Todos',           labelShort: 'Todos'      },
-  { value: 'hospital-national', label: 'Hospital Nacional', labelShort: 'H. Nacional' },
-  { value: 'emergency',         label: 'Emergencia',      labelShort: 'Emergencia' },
-  { value: 'health-center',     label: 'Centro de Salud', labelShort: 'C. Salud'   },
-  { value: 'pharmacy',          label: 'Farmacia',        labelShort: 'Farmacia'   },
-  { value: 'clinic',            label: 'Clínica',         labelShort: 'Clínica'    },
-  { value: 'laboratory',        label: 'Laboratorio',     labelShort: 'Lab.'       },
-  { value: 'hospital-regional', label: 'Hospital Regional', labelShort: 'H. Regional' },
-  { value: 'hospital-primary',  label: 'Hospital Primario', labelShort: 'H. Primario' },
-  { value: 'health-post',       label: 'Puesto de Salud', labelShort: 'Puesto'     },
-  { value: 'dental',            label: 'Clínica Dental',  labelShort: 'Dental'     },
-  { value: 'mental-health',     label: 'Salud Mental',    labelShort: 'S. Mental'  },
+  { value: 'all',               label: 'Todos',             labelShort: 'Todos'      },
+  { value: 'hospital-national', label: 'Hospital Nacional',  labelShort: 'H. Nacional'},
+  { value: 'emergency',         label: 'Emergencia',         labelShort: 'Emergencia' },
+  { value: 'health-center',     label: 'Centro de Salud',    labelShort: 'C. Salud'  },
+  { value: 'pharmacy',          label: 'Farmacia',           labelShort: 'Farmacia'  },
+  { value: 'clinic',            label: 'Clínica',            labelShort: 'Clínica'   },
+  { value: 'laboratory',        label: 'Laboratorio',        labelShort: 'Lab.'      },
+  { value: 'hospital-regional', label: 'Hospital Regional',  labelShort: 'H. Regional'},
+  { value: 'hospital-primary',  label: 'Hospital Primario',  labelShort: 'H. Primario'},
+  { value: 'health-post',       label: 'Puesto de Salud',    labelShort: 'Puesto'    },
+  { value: 'dental',            label: 'Clínica Dental',     labelShort: 'Dental'    },
+  { value: 'mental-health',     label: 'Salud Mental',       labelShort: 'S. Mental' },
 ];
 
-/** Todos los search terms agrupados para una sola búsqueda en Places */
-export const ALL_SEARCH_TERMS = Object.entries(TYPE_CONFIG)
-  .filter(([key]) => key !== 'default')
-  .flatMap(([type, details]) =>
-    details.searchTerms.map(term => ({ term, type }))
-  );
+/**
+ * Todos los search terms expandidos por tipo, listos para dispararse
+ * en paralelo a la Google Places Text Search API.
+ * No incluye 'default' (no tiene términos de búsqueda).
+ */
+export const ALL_SEARCH_TERMS: Array<{ term: string; type: string; googleTypes?: string[] }> =
+  Object.entries(TYPE_CONFIG)
+    .filter(([key]) => key !== 'default')
+    .flatMap(([type, details]) =>
+      details.searchTerms.map(term => ({
+        term,
+        type,
+        googleTypes: details.googleTypes,
+      }))
+    );

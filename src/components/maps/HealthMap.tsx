@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { AnimatePresence, motion } from 'motion/react';
 import { 
@@ -10,9 +10,6 @@ import { Clinic } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
 import { GOOGLE_MAPS_KEY } from "../../lib/config";
-import { getClinics } from '../../services/clinicService';
-import { getMinsaReferenceNames, getMinsaMetadata } from '../../services/clinicService';
-import { syncClinicToFirestore } from '../../services/triageService';
 import { getClinicTypeDetails, FILTER_OPTIONS, ALL_SEARCH_TERMS, FilterType } from './mapUtils';
 import { getReportSummaries, getConfidenceBadge, ReportSummary } from '../../services/facilityReportService';
 import { ReportModal } from './ReportModal';
@@ -339,6 +336,7 @@ export default function HealthMap() {
     setPlacesLib(placesLibrary || null);
   }, [placesLibrary]);
 
+  // ── Geolocation ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -351,7 +349,7 @@ export default function HealthMap() {
     }
   }, []);
 
-  // Auto-centrar el mapa una sola vez cuando se detecta la ubicación y el mapa está listo
+  // ── Auto-center once user location is detected ────────────────────────────
   useEffect(() => {
     if (mapInstance && userLocation !== NICARAGUA_CENTER && !isAutoCentered) {
       mapInstance.panTo(userLocation);
@@ -360,168 +358,144 @@ export default function HealthMap() {
     }
   }, [mapInstance, userLocation, isAutoCentered]);
 
+  // ── Load community report badges from Firestore (lightweight) ────────────
+  // This is the ONLY Firestore read at startup — clinics come from Google Places.
   useEffect(() => {
-    const loadClinics = async () => {
+    const loadReports = async () => {
       setLoading(true);
       try {
-        // Google Places is the primary source — Firestore only has enriched/cached results
-        const dbClinics = await getClinics();
-        setClinics(dbClinics);
-
-        // Load confidence badges from report summaries
-        if (dbClinics.length > 0) {
-          const ids = dbClinics.map(c => c.id);
-          const summaries = await getReportSummaries(ids);
-          setReportSummaries(summaries);
-        }
+        // We start with zero static clinics — Google Places fills them on map idle.
+        // We pre-load an empty reports map so the confidence badge system is ready.
+        const summaries = await getReportSummaries([]);
+        setReportSummaries(summaries);
       } catch (error) {
-        console.error('Error loading clinics:', error);
+        console.warn('Could not load report summaries:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadClinics();
+    loadReports();
   }, []);
+
+  // ── Google Places → Clinics (Zero-DB real-time discovery) ────────────────
+  // No static data. No MINSA files. Google Places is the sole truth source.
+  // Each search term maps to a specific Salud Conecta facility type.
+  const lastSearchBoundsRef = useRef<string | null>(null);
 
   const searchPlacesInArea = useCallback(async (map: google.maps.Map) => {
     if (!placesLib || !hasValidKey) return;
-    
+
+    // Throttle: skip if bounds haven't changed significantly
+    const bounds = map.getBounds();
+    if (!bounds) return;
+    const boundsKey = [
+      bounds.getNorthEast().lat().toFixed(3),
+      bounds.getNorthEast().lng().toFixed(3),
+      bounds.getSouthWest().lat().toFixed(3),
+      bounds.getSouthWest().lng().toFixed(3),
+    ].join(',');
+    if (boundsKey === lastSearchBoundsRef.current) return;
+    lastSearchBoundsRef.current = boundsKey;
+
     setLoadingPlaces(true);
     try {
-      const bounds = map.getBounds();
-      if (!bounds) return;
+      const newClinics: Clinic[] = [];
+      const processedIds = new Set<string>();
+      const service = new placesLib.PlacesService(map);
 
-      const searchTerms = ALL_SEARCH_TERMS;
-
-      // MINSA names are used ONLY to tag public sector — NOT as location source
-      const minsaReferenceNames = getMinsaReferenceNames();
-
-      // Mapeamos las clínicas existentes por su ID de Google Place o nombre normalizado
-      const existingClinicsMap = new Map<string, Clinic>();
-      clinics.forEach(c => {
-        if (c.id.startsWith('google-')) existingClinicsMap.set(c.id, c);
-        existingClinicsMap.set(normalizeString(c.name), c); // Para clínicas que no tienen ID de Google aún
-      });
-
-      let newOrUpdatedClinics: Clinic[] = []; // Para almacenar las clínicas nuevas o actualizadas de Google
-      const processedGooglePlaceIds = new Set<string>(); // Para evitar procesar el mismo Google Place varias veces
-
-      for (const { term, type } of searchTerms) {
+      // Run all type searches sequentially to avoid overloading the API
+      for (const { term, type } of ALL_SEARCH_TERMS) {
         try {
           const request: google.maps.places.TextSearchRequest = {
-            query: `${term} Nicaragua`,
-            bounds: bounds,
+            query: term,
+            bounds,
             fields: [
-              'id', 'name', 'geometry', 'formatted_address', 'types',
+              'place_id', 'name', 'geometry', 'formatted_address',
               'formatted_phone_number', 'rating', 'user_ratings_total',
               'photos', 'opening_hours', 'website', 'price_level',
               'wheelchair_accessible_entrance',
             ],
           };
-          
-          const service = new placesLib.PlacesService(map);
-          const results = await new Promise<google.maps.places.PlaceResult[]>((resolve, reject) => {
-            service.textSearch(request, (results, status) => {
-              if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                resolve(results);
-              } else {
-                resolve([]);
-              }
+
+          const results = await new Promise<google.maps.places.PlaceResult[]>((resolve) => {
+            service.textSearch(request, (res, status) => {
+              resolve(
+                status === google.maps.places.PlacesServiceStatus.OK && res ? res : []
+              );
             });
           });
 
           for (const place of results) {
-            if (place.geometry?.location && place.place_id && !processedGooglePlaceIds.has(place.place_id)) {
-              const placeName = normalizeString(place.name || '');
-              const googleId = `google-${place.place_id}`;
-              
-              let clinicToProcess: Clinic | undefined;
-              let isUpdate = false;
+            if (!place.geometry?.location || !place.place_id) continue;
+            if (processedIds.has(place.place_id)) continue;
+            processedIds.add(place.place_id);
 
-              // 1. Buscar por ID de Google Place (más fiable)
-              if (existingClinicsMap.has(googleId)) {
-                clinicToProcess = existingClinicsMap.get(googleId)!;
-                isUpdate = true;
-              } 
-              // 2. Si no se encuentra por ID, buscar por nombre normalizado (para centros MINSA que no tienen ID de Google aún)
-              else if (existingClinicsMap.has(placeName)) {
-                clinicToProcess = existingClinicsMap.get(placeName)!;
-                isUpdate = true;
-              }
+            // Resolve up to 3 real photo URLs from Places references
+            const photos: string[] = [];
+            place.photos?.slice(0, 3).forEach(ref => {
+              try { photos.push(ref.getUrl({ maxWidth: 800, maxHeight: 600 })); } catch (_) {}
+            });
 
-              // Verificamos si este lugar de Google pertenece a la red pública del MINSA
-              const isPublicMinsa = minsaReferenceNames.some(minsaName => 
-                placeName.includes(minsaName) || minsaName.includes(placeName)
-              );
+            // Classify sector: if Google name or address mentions known public keywords → public
+            const nameLower = (place.name || '').toLowerCase();
+            const isPublic = /minsa|hospital|centro de salud|puesto de salud|gobierno|public/i.test(nameLower);
 
-              // Google Places is ALWAYS the authoritative source for location.
-              // MINSA metadata (phone, services) enriches but never overrides Google coordinates.
-              const minsaMeta = isPublicMinsa ? getMinsaMetadata(place.name || '') : null;
+            const clinic: Clinic = {
+              id: `google-${place.place_id}`,
+              placeId: place.place_id,
+              name: place.name || 'Sin nombre',
+              type: type as Clinic['type'],
+              sector: isPublic ? 'public' : 'private',
+              location: {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+              },
+              address: place.formatted_address || '',
+              phone: place.formatted_phone_number || '',
+              rating: place.rating,
+              reviews: place.user_ratings_total,
+              open24h: type === 'hospital' || type === 'hospital-national' ||
+                       type === 'hospital-regional' || type === 'hospital-primary' ||
+                       type === 'emergency',
+              isOpen: place.opening_hours?.isOpen?.() ?? true,
+              photos: photos.length > 0 ? photos : undefined,
+              website: (place as any).website,
+              openingHours: place.opening_hours ? {
+                isOpen: place.opening_hours.isOpen?.(),
+                weekdayText: place.opening_hours.weekday_text,
+              } : undefined,
+              wheelchairAccessible: (place as any).wheelchair_accessible_entrance,
+              priceLevel: (place as any).price_level,
+            };
 
-              // Resolve photo URLs from Places photo references (max 3 photos, 800px wide)
-              const photoUrls: string[] = [];
-              if (place.photos && place.photos.length > 0) {
-                place.photos.slice(0, 3).forEach(photoRef => {
-                  try {
-                    photoUrls.push(photoRef.getUrl({ maxWidth: 800, maxHeight: 600 }));
-                  } catch (_) {}
-                });
-              }
-
-              const clinicData: Clinic = {
-                id: googleId,
-                name: place.name || 'Sin nombre',
-                type: (clinicToProcess?.type ?? type) as Clinic['type'],
-                sector: isPublicMinsa ? 'public' : (clinicToProcess?.sector ?? 'private'),
-                location: {
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng(),
-                },
-                address: place.formatted_address || clinicToProcess?.address || '',
-                phone: place.formatted_phone_number || minsaMeta?.phone || clinicToProcess?.phone || '',
-                open24h: clinicToProcess?.open24h ?? minsaMeta?.open24h ?? (type === 'hospital' || type === 'emergency'),
-                isOpen: place.opening_hours?.isOpen?.() ?? true,
-                rating: place.rating ?? clinicToProcess?.rating,
-                reviews: place.user_ratings_total ?? clinicToProcess?.reviews,
-                description: minsaMeta?.description || clinicToProcess?.description,
-                services: minsaMeta?.services || clinicToProcess?.services,
-                // Rich detail fields
-                placeId: place.place_id,
-                website: (place as any).website || clinicToProcess?.website,
-                photos: photoUrls.length > 0 ? photoUrls : clinicToProcess?.photos,
-                openingHours: place.opening_hours ? {
-                  isOpen: place.opening_hours.isOpen?.(),
-                  weekdayText: place.opening_hours.weekday_text,
-                } : clinicToProcess?.openingHours,
-                wheelchairAccessible: (place as any).wheelchair_accessible_entrance ?? clinicToProcess?.wheelchairAccessible,
-                priceLevel: (place as any).price_level ?? clinicToProcess?.priceLevel,
-              };
-
-              newOrUpdatedClinics.push(clinicData);
-              if (isPublicMinsa) syncClinicToFirestore(clinicData);
-              processedGooglePlaceIds.add(place.place_id); // Marcar como procesado
-            }
+            newClinics.push(clinic);
           }
         } catch (err) {
-          console.warn(`Search failed for ${term}:`, err);
+          console.warn(`[Places] Search failed for "${term}":`, err);
         }
       }
 
-      // Combinar las clínicas existentes con las nuevas/actualizadas, eliminando duplicados por ID
-      setClinics(prevClinics => {
-        const combinedMap = new Map<string, Clinic>();
-        // Añadir todas las clínicas previas
-        prevClinics.forEach(c => combinedMap.set(c.id, c));
-        // Sobreescribir/añadir con las nuevas/actualizadas de Google Places
-        newOrUpdatedClinics.forEach(c => combinedMap.set(c.id, c));
-        return Array.from(combinedMap.values());
+      // Merge with existing clinics, Google Places always wins on duplicates
+      setClinics(prev => {
+        const merged = new Map<string, Clinic>();
+        prev.forEach(c => merged.set(c.id, c));
+        newClinics.forEach(c => merged.set(c.id, c));
+        return Array.from(merged.values());
       });
+
+      // Update confidence badges for newly discovered clinic IDs
+      if (newClinics.length > 0) {
+        const ids = newClinics.map(c => c.id);
+        getReportSummaries(ids).then(summaries => {
+          setReportSummaries(prev => new Map([...prev, ...summaries]));
+        }).catch(() => {});
+      }
     } catch (error) {
-      console.error('Error searching places:', error);
+      console.error('[Places] Area search error:', error);
     } finally {
       setLoadingPlaces(false);
     }
-  }, [placesLib, hasValidKey, clinics]);
+  }, [placesLib, hasValidKey]);
 
   const handleMapIdle = useCallback(() => {
     // Solo buscar si el mapa está listo, Places API está cargada y no estamos ya cargando
