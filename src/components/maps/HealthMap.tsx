@@ -327,7 +327,7 @@ export default function HealthMap() {
   const [isAutoCentered, setIsAutoCentered] = useState(false);
   const [placesLib, setPlacesLib] = useState<any>(null);
 
-  // â”€â”€ Autocomplete state (Google Maps-style live search) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Autocomplete state (Google Maps-style live search) ---------------------------
   const [searchQuery, setSearchQuery] = useState('');
   // Use 'any' to avoid crashes when google.maps.places types are not available (API key restriction)
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -346,7 +346,7 @@ export default function HealthMap() {
     setPlacesLib(placesLibrary || null);
   }, [placesLibrary]);
 
-  // â”€â”€ Seed static data so local search always works (even without API key) â”€â”€â”€â”€
+  // --- Seed static data so local search always works (even without API key) ------
   useEffect(() => {
     const seedClinics: (Clinic & { isOpen?: boolean })[] = NICARAGUA_HOSPITALS.map((h, i) => ({
       ...h,
@@ -356,7 +356,7 @@ export default function HealthMap() {
     setClinics(seedClinics);
   }, []);
 
-  // â”€â”€ Local fallback search: always works regardless of API key â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Local fallback search: always works regardless of API key ------------------
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setLocalSuggestions([]);
@@ -369,7 +369,7 @@ export default function HealthMap() {
     setLocalSuggestions(matches);
   }, [searchQuery, clinics]);
 
-  // â”€â”€ Google Places Autocomplete: real-time predictions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Google Places Autocomplete: real-time predictions -------------------------------
   // Only runs when Google Maps API is fully authorized (production / Vercel)
   useEffect(() => {
     if (!placesLib || !searchQuery.trim() || searchQuery.length < 2) {
@@ -400,7 +400,7 @@ export default function HealthMap() {
         }
       );
     } catch (err) {
-      // Google Maps not loaded or API key blocked â€” silently fall back to local search
+      // Google Maps not loaded or API key blocked --- silently fall back to local search
       setAutocompleteLoading(false);
       setSuggestions([]);
     }
@@ -408,7 +408,7 @@ export default function HealthMap() {
     return () => { cancelled = true; };
   }, [searchQuery, placesLib, mapInstance]);
 
-  // â”€â”€ Handle suggestion selection: fetch full details + open panel â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Handle suggestion selection: fetch full details + open panel ------------
   const handleSuggestionSelect = useCallback((prediction: google.maps.places.AutocompletePrediction) => {
     if (!placesLib || !mapInstance) return;
 
@@ -502,7 +502,7 @@ export default function HealthMap() {
     );
   }, [placesLib, mapInstance]);
 
-  // â”€â”€ Geolocation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Geolocation ---------------------------------------------------------------------------------------
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -515,7 +515,7 @@ export default function HealthMap() {
     }
   }, []);
 
-  // â”€â”€ Auto-center once user location is detected â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Auto-center once user location is detected ------------------------------------------
   useEffect(() => {
     if (mapInstance && userLocation !== NICARAGUA_CENTER && !isAutoCentered) {
       mapInstance.panTo(userLocation);
@@ -524,13 +524,13 @@ export default function HealthMap() {
     }
   }, [mapInstance, userLocation, isAutoCentered]);
 
-  // â”€â”€ Load community report badges from Firestore (lightweight) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // This is the ONLY Firestore read at startup â€” clinics come from Google Places.
+  // --- Load community report badges from Firestore (lightweight) ------------------
+  // This is the ONLY Firestore read at startup --- clinics come from Google Places.
   useEffect(() => {
     const loadReports = async () => {
       setLoading(true);
       try {
-        // We start with zero static clinics â€” Google Places fills them on map idle.
+        // We start with zero static clinics --- Google Places fills them on map idle.
         // We pre-load an empty reports map so the confidence badge system is ready.
         const summaries = await getReportSummaries([]);
         setReportSummaries(summaries);
@@ -543,7 +543,7 @@ export default function HealthMap() {
     loadReports();
   }, []);
 
-  // â”€â”€ Google Places â†’ Clinics (Zero-DB real-time discovery) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // --- Google Places â†’ Clinics (Zero-DB real-time discovery) ------------------------
   // No static data. No MINSA files. Google Places is the sole truth source.
   // Each search term maps to a specific Salud Conecta facility type.
   const lastSearchBoundsRef = useRef<string | null>(null);
@@ -772,10 +772,10 @@ export default function HealthMap() {
           )}
         </AnimatePresence>
 
-        {/* â”€â”€ Google Maps-Style Search: Left compact panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* --- Google Maps-Style Search: Left compact panel ---------------------------- */}
         <div className="absolute top-3 left-3 z-40 flex flex-col gap-2" style={{ width: 'min(360px, calc(100vw - 1.5rem))' }}>
 
-          {/* Main search bar â€” white, Google-style */}
+          {/* Main search bar --- white, Google-style */}
           <div className="relative">
             <div className={`flex items-center bg-white rounded-3xl shadow-xl border transition-all duration-200 ${
               searchFocused ? 'border-blue-400' : 'border-gray-200'
@@ -812,10 +812,10 @@ export default function HealthMap() {
               {/* Divider */}
               <div className="w-px h-5 bg-gray-200 shrink-0" />
 
-              {/* Directions button â€” Google Maps blue hexagon style */}
+              {/* Directions button --- Google Maps blue hexagon style */}
               <button
                 onClick={() => { if (selectedClinic) setIsNavigating(true); }}
-                title="CÃ³mo llegar"
+                title="C\u00F3mo llegar"
                 className="w-10 h-10 mr-1 rounded-full flex items-center justify-center shrink-0 transition-all"
                 style={{ background: selectedClinic ? '#1a73e8' : '#e8f0fe' }}
               >
@@ -823,7 +823,7 @@ export default function HealthMap() {
               </button>
             </div>
 
-            {/* â”€â”€ Suggestions Dropdown: Local + Google Places â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* --- Suggestions Dropdown: Local + Google Places ---------------------- */}
             <AnimatePresence>
               {searchFocused && (suggestions.length > 0 || localSuggestions.length > 0) && (
                 <motion.div
@@ -892,7 +892,7 @@ export default function HealthMap() {
                             </div>
                             <div className="shrink-0 flex flex-col items-end gap-0.5">
                               {clinic.rating && (
-                                <span className="text-[9px] text-amber-500 font-bold">â˜… {clinic.rating.toFixed(1)}</span>
+                                <span className="text-[9px] text-amber-500 font-bold">\u2605 {clinic.rating.toFixed(1)}</span>
                               )}
                               {(clinic.isOpen || clinic.open24h) ? (
                                 <span className="text-[8px] font-bold text-emerald-500">Abierto</span>
@@ -971,7 +971,7 @@ export default function HealthMap() {
           </div>
 
 
-          {/* â”€â”€ Category chips â€” Google Maps style white pills â”€â”€â”€ */}
+          {/* --- Category chips --- Google Maps style white pills ---- */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
             {FILTER_OPTIONS.map(({ value, label, labelShort }) => {
               const details = value !== 'all' ? getClinicTypeDetails(value) : null;
@@ -1010,15 +1010,15 @@ export default function HealthMap() {
             className="absolute top-0 left-0 bottom-0 z-45 flex"
             style={{ zIndex: 45 }}
           >
-            {/* â”€â”€ Narrow left strip (like Google Maps sidebar) â”€â”€ */}
+            {/* --- Narrow left strip (like Google Maps sidebar) --- */}
             <div className="w-10 shrink-0" />
 
-            {/* â”€â”€ Main detail panel (Google Maps left panel) â”€â”€ */}
+            {/* --- Main detail panel (Google Maps left panel) --- */}
             <div
               className="flex flex-col bg-white shadow-2xl overflow-hidden"
               style={{ width: 'min(360px, calc(100vw - 2.5rem))', maxHeight: '100dvh', overflowY: 'auto' }}
             >
-              {/* â”€â”€ Photo â”€â”€ */}
+              {/* --- Photo --- */}
               {selectedClinic.photos && selectedClinic.photos.length > 0 ? (
                 <div className="relative shrink-0" style={{ height: '200px' }}>
                   <img
@@ -1050,13 +1050,13 @@ export default function HealthMap() {
                 </div>
               )}
 
-              {/* â”€â”€ Name + Rating block â”€â”€ */}
+              {/* --- Name + Rating block --- */}
               <div className="px-5 pt-4 pb-2">
                 <h2 className="text-xl font-semibold text-gray-900 leading-tight">
                   {selectedClinic.name}
                 </h2>
 
-                {/* Stars + review count â€” exactly like Google Maps */}
+                {/* Stars + review count --- exactly like Google Maps */}
                 {selectedClinic.rating ? (
                   <div className="flex items-center gap-1.5 mt-1.5">
                     <span className="text-sm font-semibold text-gray-700">
@@ -1077,32 +1077,32 @@ export default function HealthMap() {
                   </div>
                 ) : null}
 
-                {/* Type badge + wheelchair â€” like "Hospital â€¢ â™¿" */}
+                {/* Type badge + wheelchair --- like "Hospital â€¢ \u267F" */}
                 <div className="flex items-center gap-1.5 mt-1.5 text-[13px] text-gray-600">
                   <span>{getClinicTypeDetails(selectedClinic.type).label}</span>
                   {selectedClinic.wheelchairAccessible && (
                     <>
-                      <span className="text-gray-400">Â·</span>
-                      <span>â™¿</span>
+                      <span className="text-gray-400">\u00B7</span>
+                      <span>\u267F</span>
                     </>
                   )}
                   {selectedClinic.sector === 'public' && (
                     <>
-                      <span className="text-gray-400">Â·</span>
-                      <span className="text-blue-600 font-medium">PÃºblico</span>
+                      <span className="text-gray-400">\u00B7</span>
+                      <span className="text-blue-600 font-medium">P\u00FAblico</span>
                     </>
                   )}
                   {/* Confidence badge */}
                   {(() => {
                     const badge = getConfidenceBadge(reportSummaries.get(selectedClinic.id));
                     const map: Record<string, string> = {
-                      verified: 'âœ… Verificado',
-                      warned: 'âš ï¸ En revisiÃ³n',
-                      flagged: 'ðŸš© Reportado',
+                      verified: '\u2705 Verificado',
+                      warned: 'âš ï¸ En revisi\u00F3n',
+                      flagged: '\u1F6A9 Reportado',
                     };
                     return map[badge] ? (
                       <>
-                        <span className="text-gray-400">Â·</span>
+                        <span className="text-gray-400">\u00B7</span>
                         <span className="text-[12px] text-gray-500">{map[badge]}</span>
                       </>
                     ) : null;
@@ -1110,9 +1110,9 @@ export default function HealthMap() {
                 </div>
               </div>
 
-              {/* â”€â”€ Tabs: DescripciÃ³n | Opiniones | Acerca de â”€â”€ */}
+              {/* --- Tabs: Descripci\u00F3n | Opiniones | Acerca de --- */}
               <div className="flex border-b border-gray-200 px-2 mt-1">
-                {['DescripciÃ³n general', 'Opiniones', 'Acerca de'].map((tab, i) => (
+                {['Descripci\u00F3n general', 'Opiniones', 'Acerca de'].map((tab, i) => (
                   <button
                     key={tab}
                     className={`flex-1 py-2.5 text-[13px] font-medium border-b-2 transition-colors ${
@@ -1126,7 +1126,7 @@ export default function HealthMap() {
                 ))}
               </div>
 
-              {/* â”€â”€ Circular Action Buttons â€” exactly like Google Maps â”€â”€ */}
+              {/* --- Circular Action Buttons --- exactly like Google Maps --- */}
               <div className="flex justify-around px-3 py-4 border-b border-gray-100">
                 {/* Indicaciones */}
                 <button
@@ -1181,7 +1181,7 @@ export default function HealthMap() {
                 )}
               </div>
 
-              {/* â”€â”€ Address row â”€â”€ */}
+              {/* --- Address row --- */}
               {selectedClinic.address && (
                 <div className="flex items-start gap-4 px-5 py-3.5 border-b border-gray-100">
                   <MapPin className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
@@ -1191,14 +1191,14 @@ export default function HealthMap() {
                 </div>
               )}
 
-              {/* â”€â”€ Hours row â”€â”€ */}
+              {/* --- Hours row --- */}
               {selectedClinic.open24h ? (
                 <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100">
                   <Clock className="w-4 h-4 text-gray-500 shrink-0" />
                   <div>
                     <p className="text-[13px] text-gray-700">
                       <span className="text-green-700 font-medium">Abierto</span>
-                      {' Â· '}
+                      {' \u00B7 '}
                       <span>Abre las 24 horas</span>
                     </p>
                   </div>
@@ -1243,7 +1243,7 @@ export default function HealthMap() {
                 </div>
               )}
 
-              {/* â”€â”€ Phone row â”€â”€ */}
+              {/* --- Phone row --- */}
               {selectedClinic.phone && (
                 <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100">
                   <Phone className="w-4 h-4 text-gray-500 shrink-0" />
@@ -1253,7 +1253,7 @@ export default function HealthMap() {
                 </div>
               )}
 
-              {/* â”€â”€ Website row â”€â”€ */}
+              {/* --- Website row --- */}
               {selectedClinic.website && (
                 <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100">
                   <Globe2 className="w-4 h-4 text-gray-500 shrink-0" />
@@ -1268,7 +1268,7 @@ export default function HealthMap() {
                 </div>
               )}
 
-              {/* â”€â”€ Report button (community tool, unique to Salud Conecta) â”€â”€ */}
+              {/* --- Report button (community tool, unique to Salud Conecta) --- */}
               <div className="px-5 py-4">
                 <button
                   onClick={() => setSelectedForReport(selectedClinic)}
@@ -1279,7 +1279,7 @@ export default function HealthMap() {
                 </button>
               </div>
 
-              {/* â”€â”€ Photo gallery strip â”€â”€ */}
+              {/* --- Photo gallery strip --- */}
               {selectedClinic.photos && selectedClinic.photos.length > 1 && (
                 <div className="px-5 pb-4">
                   <div className="flex gap-2 overflow-x-auto no-scrollbar">
