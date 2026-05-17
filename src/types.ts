@@ -57,6 +57,20 @@ export interface Clinic {
   reviews?: number;
   imageUrl?: string;
   services?: string[];
+  // Rich detail fields from Google Places API
+  placeId?: string;
+  website?: string;
+  photos?: string[];           // Array of photo URLs (resolved via Places photo references)
+  openingHours?: {             // Weekly schedule from Google Places
+    isOpen?: boolean;          // Current open/closed status
+    periods?: Array<{
+      open: { day: number; time: string };
+      close?: { day: number; time: string };
+    }>;
+    weekdayText?: string[];    // Human-readable: ["Lunes: 8:00 a.m. – 5:00 p.m.", ...]
+  };
+  wheelchairAccessible?: boolean;
+  priceLevel?: 0 | 1 | 2 | 3 | 4; // 0=free, 1=inexpensive, 2=moderate, 3=expensive, 4=very expensive
 }
 
 export interface Appointment {
