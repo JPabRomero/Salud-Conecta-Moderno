@@ -82,6 +82,8 @@ export interface TriageWithLocationResult {
     travelTime: string;
     isEmergency: boolean;
     clinic?: Clinic; // Triage result carries the full clinic object for routing
+    userLat?: number;
+    userLng?: number;
   };
   error?: boolean;
 }
@@ -151,7 +153,9 @@ export async function getEnhancedTriageWithLocation(symptoms: string, membership
           distanceKm: finalDistance,
           travelTime: estimateTravelTime(finalDistance),
           isEmergency: isEmergency,
-          clinic: recommendedClinic
+          clinic: recommendedClinic,
+          userLat: userLat,
+          userLng: userLng
         },
         error: false
       };

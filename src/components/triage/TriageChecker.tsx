@@ -198,15 +198,37 @@ export default function TriageChecker() {
   };
 
   const handleViewOnMap = () => {
-    if (result?.locationInfo?.clinic) {
-      window.dispatchEvent(new CustomEvent('selectAndNavigateClinic', {
-        detail: {
-          clinic: result.locationInfo.clinic,
-          startNavigation: true
-        }
-      }));
-    }
-    window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
+    if (!result?.locationInfo) return;
+    const { clinic, userLat, userLng } = result.locationInfo;
+    if (!clinic?.location) return;
+
+    const destLat = clinic.location.lat;
+    const destLng = clinic.location.lng;
+    const originLat = userLat || 12.1328;
+    const originLng = userLng || -86.2504;
+
+    const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    
+    // 1. Intentos de URL Scheme Nativo
+    const nativeUrl = isiOS 
+      ? `comgooglemaps://?saddr=${originLat},${originLng}&daddr=${destLat},${destLng}&directionsmode=driving`
+      : `google.navigation:q=${destLat},${destLng}`;
+
+    // 2. URL Universal (Fallback robusto para web/PWA/PC)
+    const universalUrl = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+
+    // Lógica de Redirección con Tiempos (Manejo de Fallback)
+    const start = Date.now();
+    
+    // Intentar abrir la app nativa
+    window.location.href = nativeUrl;
+
+    // Si en 1.5 segundos no ha salido de la PWA (sigue en foco y no cambió el tiempo), abrimos universalUrl en una nueva pestaña
+    setTimeout(() => {
+      if (Date.now() - start < 2000) {
+        window.open(universalUrl, '_blank');
+      }
+    }, 1500);
   };
 
   const handleSaveToHistory = async () => {
@@ -406,7 +428,7 @@ export default function TriageChecker() {
                         onClick={handleViewOnMap}
                         className="w-full h-12 bg-primary text-on-primary rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
                       >
-                        Ver en Mapa de Salud
+                        Ver ruta en Google Maps
                       </button>
                     </div>
                   )}
@@ -490,7 +512,7 @@ export default function TriageChecker() {
                              onClick={handleViewOnMap}
                              className="w-full h-14 bg-primary text-on-primary rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/30 flex items-center justify-center gap-3"
                           >
-                            <Navigation size={18} /> Abrir Mapa de Salud
+                            <Navigation size={18} /> Ver ruta en Google Maps
                           </button>
                         </div>
                       )}
