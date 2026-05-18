@@ -197,7 +197,7 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className={`w-full flex-grow flex flex-col ${activeTab === 'map' ? 'h-[calc(100dvh-64px)] overflow-hidden' : ''}`}
+            className={`w-full flex-grow flex flex-col ${activeTab === 'map' ? 'h-[calc(100dvh-144px)] md:h-[calc(100dvh-64px)] overflow-hidden overscroll-behavior-none' : ''}`}
           >
             {children}
           </motion.div>
