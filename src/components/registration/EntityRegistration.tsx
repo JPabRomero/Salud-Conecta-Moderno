@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Store, 
   Activity, 
@@ -29,6 +29,10 @@ import {
   FileSearch,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { APIProvider, Map as GoogleMap, AdvancedMarker } from '@vis.gl/react-google-maps';
+import { GOOGLE_MAPS_KEY } from '../../lib/config';
+import { saveClinic } from '../../services/clinicService';
+import { Clinic } from '../../types';
 
 interface EntityRegistrationProps {
   onBack: () => void;
@@ -42,7 +46,67 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
   const [regType, setRegType] = useState<RegistrationType>(initialType);
   const [isValidating, setIsValidating] = useState(false);
 
-  const handleFinishRegistration = () => {
+  // --- Form States ---
+  const [name, setName] = useState('');
+  const [lastName, setLastName] = useState(''); // Only for doctor
+  const [selectedType, setSelectedType] = useState<Clinic['type']>('clinic');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [open24h, setOpen24h] = useState(false);
+  const [lat, setLat] = useState(12.1328);
+  const [lng, setLng] = useState(-86.2504);
+
+  // --- Geolocation Auto-detection on Startup ---
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLat(pos.coords.latitude);
+          setLng(pos.coords.longitude);
+        },
+        (err) => console.warn('Geolocation registration error:', err),
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
+
+  // --- Sync Default Subtypes when Primary Category Changes ---
+  useEffect(() => {
+    if (regType === 'doctor') {
+      setSelectedType('clinic');
+    } else if (regType === 'clinic') {
+      setSelectedType('clinic');
+    } else {
+      setSelectedType('laboratory');
+    }
+  }, [regType]);
+
+  const handleFinishRegistration = async () => {
+    let finalName = '';
+    if (regType === 'doctor') {
+      finalName = `Dr. ${name} ${lastName}`.trim() || 'Médico Premium';
+    } else {
+      finalName = name || (regType === 'clinic' ? 'Clínica Privada Premium' : 'Establecimiento Premium');
+    }
+
+    const clinicToSave: Omit<Clinic, 'id'> = {
+      name: finalName,
+      type: regType === 'doctor' ? 'clinic' : selectedType,
+      sector: 'private', // Registered premium clinics are always private
+      location: { lat, lng },
+      address: address || 'Dirección no especificada',
+      phone: phone || '',
+      open24h: open24h,
+      rating: 5.0, // Pre-seeded premium doctor rating
+      reviews: 1,  // Pre-seeded review
+      wheelchairAccessible: true,
+      description: regType === 'doctor' 
+        ? 'Médico profesional premium verificado en la red de Salud Conecta IA.' 
+        : 'Establecimiento de salud premium certificado.',
+    };
+
+    console.log('Persisting newly registered premium facility in Firestore:', clinicToSave);
+    await saveClinic(clinicToSave);
     setIsValidating(true);
   };
 
@@ -245,6 +309,8 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                     <div className="flex flex-col gap-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Nombre(s)</label>
                       <input 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
                         placeholder="Ej. Dra. Elena" 
                         type="text" 
@@ -253,42 +319,73 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                     <div className="flex flex-col gap-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Apellidos</label>
                       <input 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
                         className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
                         placeholder="Ej. Silva Ramírez" 
                         type="text" 
                       />
                     </div>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Teléfono de Contacto</label>
+                      <input 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
+                        placeholder="Ej. +505 8888 8888" 
+                        type="tel" 
+                      />
+                    </div>
                   </>
                 ) : regType === 'clinic' ? (
                   <>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 md:col-span-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Nombre de la Institución</label>
                       <input 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
                         placeholder="Ej. Hospital General San Martín" 
                         type="text" 
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 md:col-span-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Tipo de Centro</label>
-                    <select defaultValue="" className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium outline-none appearance-none cursor-pointer">
-                        <option value="" disabled>Seleccionar tipo...</option>
-                        <option value="hospital">Hospital</option>
-                        <option value="clinica">Clínica</option>
-                        <option value="sanatorio">Sanatorio</option>
-                        <option value="cap">Centro de Atención Primaria</option>
+                      <select 
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value as Clinic['type'])}
+                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="clinic">Clínica / Consultorio</option>
+                        <option value="hospital">Hospital Privado</option>
+                        <option value="emergency">Centro de Urgencias</option>
+                        <option value="dental">Clínica Dental</option>
+                        <option value="mental-health">Salud Mental</option>
                       </select>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 md:col-span-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Razón Social</label>
                       <input 
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
                         placeholder="Ej. Laboratorios del Sur S.A." 
                         type="text" 
                       />
+                    </div>
+                    <div className="flex flex-col gap-2 md:col-span-2">
+                      <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Tipo de Establecimiento</label>
+                      <select 
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value as Clinic['type'])}
+                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium outline-none appearance-none cursor-pointer"
+                      >
+                        <option value="laboratory">Laboratorio de Análisis Clínicos</option>
+                        <option value="pharmacy">Farmacia / Dispensario</option>
+                      </select>
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">CUIT / Registro Sanitario</label>
@@ -296,6 +393,16 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                         className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
                         placeholder="30-XXXXXXXX-X" 
                         type="text" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Teléfono</label>
+                      <input 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium transition-all outline-none" 
+                        placeholder="Ej. +505 8888 8888" 
+                        type="tel" 
                       />
                     </div>
                   </>
@@ -432,7 +539,13 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                     <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Teléfono de Emergencias (24hs)</label>
                     <div className="relative">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-error" />
-                      <input className="w-full bg-surface-container-low border border-error-container/50 rounded-xl focus:border-error focus:ring-1 focus:ring-error text-on-surface pl-12 pr-5 py-3 font-medium outline-none" placeholder="Ej. +54 11 4444-5555" type="tel" />
+                      <input 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-surface-container-low border border-error-container/50 rounded-xl focus:border-error focus:ring-1 focus:ring-error text-on-surface pl-12 pr-5 py-3 font-medium outline-none" 
+                        placeholder="Ej. +54 11 4444-5555" 
+                        type="tel" 
+                      />
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -488,7 +601,12 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                 </div>
               </div>
               <label className="flex items-center gap-3 mt-2 group cursor-pointer p-3 bg-secondary/5 border border-secondary/10 rounded-2xl">
-                <input className="w-5 h-5 rounded border-secondary/30 bg-background text-secondary focus:ring-secondary" type="checkbox" />
+                <input 
+                  checked={open24h}
+                  onChange={(e) => setOpen24h(e.target.checked)}
+                  className="w-5 h-5 rounded border-secondary/30 bg-background text-secondary focus:ring-secondary" 
+                  type="checkbox" 
+                />
                 <span className="text-xs font-black text-secondary uppercase tracking-widest">Atención 24 Horas (Guardia Activa)</span>
               </label>
             </div>
@@ -501,44 +619,93 @@ export default function EntityRegistration({ onBack, onFinish, initialType = 'la
                 <MapPin className="w-6 h-6 text-primary" />
                 Ubicación
               </h3>
-              <div className="w-full h-48 bg-surface-container-low rounded-2xl border border-outline-variant/20 relative overflow-hidden mb-2">
-                <img 
-                  alt="Map View" 
-                  className="w-full h-full object-cover opacity-60 mix-blend-luminosity grayscale" 
-                  src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&q=80&w=600" 
-                />
-                <div className="absolute inset-0 bg-primary/10 flex items-center justify-center backdrop-blur-[1px]">
-                  <button 
-                    className="bg-surface/80 border border-outline-variant/50 px-5 py-3 rounded-full font-display font-bold text-xs text-primary flex items-center gap-2 hover:bg-surface transition-all shadow-xl" 
-                    type="button"
+              
+              {/* Interactive Google Map coordinates selector */}
+              <div className="w-full h-64 bg-surface-container-low rounded-2xl border border-outline-variant/20 relative overflow-hidden mb-2 shadow-inner">
+                <APIProvider apiKey={GOOGLE_MAPS_KEY}>
+                  <GoogleMap
+                    style={{ width: '100%', height: '100%' }}
+                    defaultCenter={{ lat: 12.1328, lng: -86.2504 }}
+                    center={{ lat, lng }}
+                    defaultZoom={14}
+                    gestureHandling="greedy"
+                    disableDefaultUI
+                    onClick={(e) => {
+                      if (e.detail.latLng) {
+                        setLat(e.detail.latLng.lat);
+                        setLng(e.detail.latLng.lng);
+                      }
+                    }}
                   >
-                    <Locate className="w-4 h-4" />
+                    <AdvancedMarker
+                      position={{ lat, lng }}
+                      draggable
+                      onDragEnd={(e) => {
+                        if (e.latLng) {
+                          setLat(e.latLng.lat());
+                          setLng(e.latLng.lng());
+                        }
+                      }}
+                    />
+                  </GoogleMap>
+                </APIProvider>
+                
+                {/* Float Locate Button */}
+                <div className="absolute bottom-3 right-3 z-10">
+                  <button 
+                    className="bg-surface/90 border border-outline-variant/50 px-4 py-2 rounded-full font-display font-bold text-[10px] text-primary flex items-center gap-1.5 hover:bg-surface transition-all shadow-xl backdrop-blur-sm" 
+                    type="button"
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                          (pos) => {
+                            setLat(pos.coords.latitude);
+                            setLng(pos.coords.longitude);
+                          }
+                        );
+                      }
+                    }}
+                  >
+                    <Locate className="w-3.5 h-3.5" />
                     Detectar Ubicación
                   </button>
                 </div>
               </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
                   {regType === 'doctor' ? 'Dirección Física / Consultorio' : regType === 'clinic' ? 'Dirección Institucional' : 'Dirección Completa'}
                 </label>
                 <textarea 
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                   className="w-full bg-surface-container-low border border-outline-variant/50 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-on-surface px-5 py-3 font-medium outline-none resize-none" 
                   placeholder={regType === 'doctor' ? 'Ej. Av. Principal 123, Consultorio 4B' : 'Calle, Número, Piso, Localidad'} 
                   rows={2}
                 />
               </div>
-              {regType === 'clinic' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">Latitud</label>
-                    <input className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-mono text-on-surface-variant cursor-not-allowed" disabled value="-34.6037" type="text" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">Longitud</label>
-                    <input className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-mono text-on-surface-variant cursor-not-allowed" disabled value="-58.3816" type="text" />
-                  </div>
+
+              {/* Coordinates Indicator */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">Latitud</label>
+                  <input 
+                    className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-mono text-on-surface-variant cursor-not-allowed" 
+                    disabled 
+                    value={lat.toFixed(6)} 
+                    type="text" 
+                  />
                 </div>
-              )}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">Longitud</label>
+                  <input 
+                    className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-2 text-xs font-mono text-on-surface-variant cursor-not-allowed" 
+                    disabled 
+                    value={lng.toFixed(6)} 
+                    type="text" 
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-col gap-4 mt-auto">

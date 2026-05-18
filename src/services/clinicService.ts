@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, query, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, query, writeBatch, setDoc, addDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Clinic, OperationType, FirestoreErrorInfo } from '../types';
 import { auth } from '../lib/firebase';
@@ -120,5 +120,22 @@ export const seedPublicClinics = async () => {
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'clinics/batch-seed');
     throw error;
+  }
+};
+
+/**
+ * Persists a newly registered private/premium clinic or doctor's office in Firestore.
+ */
+export const saveClinic = async (clinic: Omit<Clinic, 'id'>): Promise<string | undefined> => {
+  const path = 'clinics';
+  try {
+    const docRef = await addDoc(collection(db, path), {
+      ...clinic,
+      createdAt: new Date().toISOString(),
+    });
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+    return undefined;
   }
 };

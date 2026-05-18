@@ -197,6 +197,18 @@ export default function TriageChecker() {
     setIsDetailsExpanded(false);
   };
 
+  const handleViewOnMap = () => {
+    if (result?.locationInfo?.clinic) {
+      window.dispatchEvent(new CustomEvent('selectAndNavigateClinic', {
+        detail: {
+          clinic: result.locationInfo.clinic,
+          startNavigation: true
+        }
+      }));
+    }
+    window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }));
+  };
+
   const handleSaveToHistory = async () => {
     if (!auth.currentUser || !result) return;
     setIsSaving(true);
@@ -391,7 +403,7 @@ export default function TriageChecker() {
                         </div>
                       </div>
                       <button 
-                        onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }))}
+                        onClick={handleViewOnMap}
                         className="w-full h-12 bg-primary text-on-primary rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
                       >
                         Ver en Mapa de Salud
@@ -475,7 +487,7 @@ export default function TriageChecker() {
                           <h5 className="text-xl font-display font-black text-on-surface leading-tight">{result.locationInfo.nearestFacility}</h5>
                           <p className="text-xs font-bold text-on-surface-variant opacity-70">Tiempo de viaje: {result.locationInfo.travelTime}</p>
                           <button 
-                             onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'map' }))}
+                             onClick={handleViewOnMap}
                              className="w-full h-14 bg-primary text-on-primary rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/30 flex items-center justify-center gap-3"
                           >
                             <Navigation size={18} /> Abrir Mapa de Salud

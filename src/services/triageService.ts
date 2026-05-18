@@ -81,17 +81,18 @@ export interface TriageWithLocationResult {
     distanceKm: number;
     travelTime: string;
     isEmergency: boolean;
+    clinic?: Clinic; // Triage result carries the full clinic object for routing
   };
   error?: boolean;
 }
-
+ 
 export async function getEnhancedTriageWithLocation(symptoms: string, membership: 'free' | 'premium' = 'free'): Promise<TriageWithLocationResult> {
   try {
     // Coordenadas por defecto (Managua Centro) alineadas con el mapa
     let userLat = 12.1328;
     let userLng = -86.2504;
 
-    // Obtener la red completa de clínicas verificadas desde Firestore (incluye las MINSA cacheadas de Google)
+    // Obtener la red completa de clínicas verificadas desde Firestore
     const fullNetwork = await getClinics();
 
     const userLocation = await getCurrentLocation();
@@ -100,11 +101,18 @@ export async function getEnhancedTriageWithLocation(symptoms: string, membership
       userLng = userLocation.longitude;
     }
 
-    let nearestFacility = null;
-    let distanceKm = 0;
+    // Filtrar la red de clínicas de acuerdo a la membresía del usuario
+    // Free: Solo red pública (MINSA)
+    // Premium: Red pública + clínicas privadas premium registradas
+    const allowedFacilities = membership === 'free'
+      ? fullNetwork.filter(c => c.sector === 'public')
+      : fullNetwork;
 
-    if (userLat !== 12.1328) {
-      const result = getNearestFacility(fullNetwork, userLat, userLng, membership === 'free');
+    let nearestFacility = null;
+    let distanceKm = Infinity;
+
+    if (allowedFacilities.length > 0) {
+      const result = getNearestFacility(allowedFacilities, userLat, userLng, membership === 'free');
       nearestFacility = result.facility;
       distanceKm = result.distanceKm;
     }
@@ -112,49 +120,38 @@ export async function getEnhancedTriageWithLocation(symptoms: string, membership
     let isEmergency = false;
     let nearestEmergency = null;
 
-    if (userLat !== 12.1328) {
-      const emergencyHospitals = getEmergencyFacilities(fullNetwork);
-      if (emergencyHospitals?.length > 0) {
-        for (const hospital of emergencyHospitals) {
-          if (hospital.location) {
-            const dist = calculateDistance(userLat, userLng, hospital.location.lat, hospital.location.lng);
-            if (dist < 15 && dist < distanceKm) {
-              distanceKm = dist;
-              nearestEmergency = hospital;
-              isEmergency = true;
-            }
+    // Detectar si el caso requiere urgencia crítica y obtener el hospital de emergencia más cercano
+    const emergencyHospitals = getEmergencyFacilities(allowedFacilities);
+    if (emergencyHospitals?.length > 0) {
+      for (const hospital of emergencyHospitals) {
+        if (hospital.location) {
+          const dist = calculateDistance(userLat, userLng, hospital.location.lat, hospital.location.lng);
+          if (dist < 15 && dist < distanceKm) {
+            distanceKm = dist;
+            nearestEmergency = hospital;
+            isEmergency = true;
           }
         }
       }
     }
 
-    if (isEmergency && nearestEmergency) {
-      return {
-        severity: 'critical',
-        recommendation: `Llame al 911 inmediatamente o acuda a ${nearestEmergency.name} por emergencia (${nearestEmergency.address}).`,
-        reasoning: `Caso de emergencia crítica detectado basado en los síntomas: ${symptoms}. Hospital más cercano: ${nearestEmergency.name} a ${distanceKm}km.`,
-        locationInfo: {
-          nearestFacility: nearestEmergency.name,
-          distanceKm: distanceKm,
-          travelTime: estimateTravelTime(distanceKm),
-          isEmergency: true
-        },
-        error: false
-      };
-    }
+    const recommendedClinic = isEmergency && nearestEmergency ? nearestEmergency : nearestFacility;
+    const finalDistance = distanceKm === Infinity ? 0 : distanceKm;
 
-    if (userLat !== 12.1328) {
+    if (recommendedClinic) {
+      const isPriv = recommendedClinic.sector === 'private';
+      const sectorTag = isPriv ? 'Centro Privado Premium' : 'Red Pública (MINSA)';
+      
       return {
-        severity: 'high',
-        recommendation: membership === 'free'
-          ? `Acuda a ${nearestFacility?.name || 'el centro de salud más cercano'}. Si no hay servicios públicos disponibles, llame a emergencias.`
-          : `Acuda a la institución disponible más cercana.`,
-        reasoning: membership === 'free' ? 'Caso de urgencia detectado. Priorizando red pública.' : 'Caso de alta prioridad.',
+        severity: isEmergency ? 'critical' : 'high',
+        recommendation: `Estas experimentando un síntoma de urgencia debes acudir a un centro de salud de inmediato, de acuerdo a tu ubicación el centro mas cercano es: "${recommendedClinic.name}" (${sectorTag}).`,
+        reasoning: `Caso de urgencia analizado para suscripción ${membership.toUpperCase()}. Centros elegibles: ${allowedFacilities.length}. Centro recomendado: ${recommendedClinic.name} a ${finalDistance.toFixed(1)} km.`,
         locationInfo: {
-          nearestFacility: nearestFacility?.name || 'Centro de salud desconocido',
-          distanceKm: distanceKm,
-          travelTime: estimateTravelTime(distanceKm),
-          isEmergency: false
+          nearestFacility: recommendedClinic.name,
+          distanceKm: finalDistance,
+          travelTime: estimateTravelTime(finalDistance),
+          isEmergency: isEmergency,
+          clinic: recommendedClinic
         },
         error: false
       };
@@ -162,10 +159,8 @@ export async function getEnhancedTriageWithLocation(symptoms: string, membership
 
     return {
       severity: 'high',
-      recommendation: membership === 'free'
-        ? 'Acuda al centro de salud público más cercano. Los servicios de salud pública están disponibles sin costo.'
-        : 'Acuda a una institución de salud disponible.',
-      reasoning: 'Caso de alta prioridad detectado.',
+      recommendation: 'Estas experimentando un síntoma de urgencia debes acudir a un centro de salud de inmediato. Por favor, acuda al centro asistencial más cercano.',
+      reasoning: 'Caso de alta prioridad detectado. No hay clínicas geolocalizadas disponibles en la red.',
       error: false
     };
   } catch (error) {
