@@ -292,7 +292,7 @@ export default function TriageChecker() {
         <div className="flex-1 flex flex-col lg:flex-row gap-6 relative overflow-hidden min-h-0">
           
           {/* Left Column: Conversational Chat */}
-          <div className="flex-1 bg-surface-container-low/40 backdrop-blur-sm border border-outline-variant/30 rounded-[32px] overflow-hidden flex flex-col shadow-sm relative min-h-[450px]">
+          <div className="flex-1 bg-surface-container backdrop-blur-sm border border-outline-variant/30 rounded-[32px] overflow-hidden flex flex-col shadow-sm relative min-h-[450px]">
             
             {/* Chat message space */}
             <div className="flex-grow overflow-y-auto p-5 md:p-6 space-y-5 scrollbar-none">
@@ -313,7 +313,7 @@ export default function TriageChecker() {
                     <div className="flex flex-col gap-1">
                       <div className={`px-4.5 py-3 rounded-2xl text-xs md:text-sm leading-relaxed whitespace-pre-wrap shadow-sm border ${
                         m.role === 'assistant'
-                          ? 'bg-surface border-outline-variant/20 text-on-surface rounded-tl-none'
+                          ? 'bg-surface-container-high border-outline-variant/20 text-on-surface rounded-tl-none'
                           : 'bg-primary text-on-primary border-primary rounded-tr-none'
                       }`}>
                         {m.content}
@@ -339,7 +339,7 @@ export default function TriageChecker() {
                       <div className="w-8 h-8 rounded-lg border bg-primary/10 border-primary/20 text-primary flex items-center justify-center shrink-0">
                         <Bot size={16} className="animate-pulse" />
                       </div>
-                      <div className="bg-surface border border-outline-variant/20 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
+                      <div className="bg-surface-container-high border border-outline-variant/20 px-4 py-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
                         <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                         <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -353,7 +353,7 @@ export default function TriageChecker() {
             </div>
 
             {/* Input Form Box */}
-            <div className="p-4 md:p-5 bg-surface border-t border-outline-variant/20 shrink-0">
+            <div className="p-4 md:p-5 bg-surface-container-low border-t border-outline-variant/20 shrink-0">
               <div className="flex gap-2 max-w-3xl mx-auto items-center">
                 <div className="flex-1 relative">
                   <input 
@@ -393,7 +393,7 @@ export default function TriageChecker() {
               <motion.div 
                 initial={{ opacity: 0, x: 25 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-surface border border-outline-variant/30 rounded-[32px] overflow-hidden flex flex-col shadow-lg flex-1 min-h-[450px]"
+                className="bg-surface-container border border-outline-variant/30 rounded-[32px] overflow-hidden flex flex-col shadow-lg flex-1 min-h-[450px]"
               >
                 {/* Result header showing severity */}
                 <div className={`p-5 flex items-center gap-3 border-b border-outline-variant/20 ${getSeverityBadgeStyles(triageResult.severity)}`}>
@@ -564,7 +564,7 @@ export default function TriageChecker() {
                 </div>
               </motion.div>
             ) : (
-              <div className="flex-1 border-2 border-dashed border-outline-variant/30 rounded-[32px] flex flex-col items-center justify-center p-8 text-center bg-surface-container-low/20 min-h-[450px]">
+              <div className="flex-1 border-2 border-dashed border-outline-variant/30 rounded-[32px] flex flex-col items-center justify-center p-8 text-center bg-surface-container min-h-[450px]">
                 <div className="w-14 h-14 rounded-2xl bg-surface-container border border-outline-variant/30 flex items-center justify-center text-on-surface-variant/40 mb-4 shadow-sm">
                   <Bot size={28} />
                 </div>
