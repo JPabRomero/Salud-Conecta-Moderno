@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useUser } from '../../contexts/UserContext';
+import { NICARAGUA_HOSPITALS } from '../../data/nicaraguaHospitals';
+import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
+
 import { motion } from 'motion/react';
 import { 
   Search as SearchIcon, 
@@ -13,7 +17,9 @@ import {
   Navigation,
   ChevronRight,
   ShieldCheck,
-  Activity
+  Activity,
+  Building2,
+  Lock
 } from 'lucide-react';
 
 interface SearchProps {
@@ -22,15 +28,35 @@ interface SearchProps {
 
 export default function Search({ onOpenRegistration }: SearchProps) {
   const [activeCategory, setActiveCategory] = React.useState<string | null>(null);
+  const { isPremium } = useUser();
 
   const categories = [
+    { id: 'public_health', icon: Building2, label: 'Salud Pública', isPublic: true },
     { id: 'doctor', icon: Stethoscope, label: 'Doctores' },
     { id: 'clinic', icon: Hospital, label: 'Clínicas' },
     { id: 'pharmacy', icon: Store, label: 'Farmacias' },
     { id: 'lab', icon: FlaskConical, label: 'Laboratorios' }
   ];
 
+  const publicItems = useMemo(() => {
+    const combined = [...NICARAGUA_HOSPITALS, ...PUBLIC_HEALTH_NETWORK];
+    return combined
+      .filter(item => item.sector === 'public')
+      .map((item, index) => ({
+        id: `public-${index}`,
+        category: 'public_health',
+        name: item.name,
+        description: item.description || item.address || 'Institución Pública de Salud',
+        image: item.imageUrl || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=400',
+        rating: item.rating || 4.0,
+        distance: 'Centro MINSA',
+        status: item.open24h ? 'Abierto 24h' : 'Horario Regular',
+        statusType: 'available'
+      }));
+  }, []);
+
   const allItems = [
+    ...publicItems,
     {
       id: '1',
       category: 'doctor',
@@ -130,20 +156,32 @@ export default function Search({ onOpenRegistration }: SearchProps) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <button 
-                key={cat.id}
-                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-                className={`px-5 py-2.5 rounded-full flex items-center gap-2 font-display font-medium text-xs transition-all border ${
-                  activeCategory === cat.id 
-                    ? 'bg-primary text-on-primary border-primary shadow-lg shadow-primary/20 scale-105' 
-                    : 'bg-surface-container-high text-on-surface-variant border-outline-variant/40 hover:border-primary/50'
-                }`}
-              >
-                <cat.icon className="w-4 h-4" />
-                {cat.label}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const isLocked = !cat.isPublic && !isPremium;
+              return (
+                <button 
+                  key={cat.id}
+                  onClick={() => {
+                    if (isLocked) {
+                      window.dispatchEvent(new CustomEvent('changeTab', { detail: 'membership' }));
+                      return;
+                    }
+                    setActiveCategory(activeCategory === cat.id ? null : cat.id);
+                  }}
+                  className={`px-5 py-2.5 rounded-full flex items-center gap-2 font-display font-medium text-xs transition-all border ${
+                    activeCategory === cat.id 
+                      ? 'bg-primary text-on-primary border-primary shadow-lg shadow-primary/20 scale-105' 
+                      : isLocked 
+                        ? 'bg-surface-container-low text-on-surface-variant/50 border-outline-variant/20 opacity-80'
+                        : 'bg-surface-container-high text-on-surface-variant border-outline-variant/40 hover:border-primary/50'
+                  }`}
+                >
+                  <cat.icon className="w-4 h-4" />
+                  {cat.label}
+                  {isLocked && <Lock className="w-3 h-3 ml-1" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
