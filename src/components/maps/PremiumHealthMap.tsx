@@ -145,17 +145,17 @@ export default function PremiumHealthMap() {
   };
 
   const getTypeColor = (type: string) => {
-    if (type.includes('hospital')) return 'bg-red-500/10 text-red-600 border-red-500/20';
-    if (type === 'clinic') return 'bg-violet-500/10 text-violet-600 border-violet-500/20';
+    if (type.includes('hospital')) return 'bg-error/10 text-error border-error/20';
+    if (type === 'clinic') return 'bg-primary/10 text-primary border-primary/20';
     if (type === 'laboratory') return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
-    if (type === 'pharmacy') return 'bg-green-500/10 text-green-600 border-green-500/20';
-    return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+    if (type === 'pharmacy') return 'bg-secondary/10 text-secondary border-secondary/20';
+    return 'bg-primary/10 text-primary border-primary/20';
   };
 
   // --- Membership Gate ---
   if (!isPremium) {
     return (
-      <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-amber-50/30 to-slate-50 dark:from-slate-950 dark:via-amber-950/10 dark:to-slate-950">
+      <div className="flex-1 flex items-center justify-center p-6 bg-background">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
