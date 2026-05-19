@@ -11,6 +11,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
 import { GOOGLE_MAPS_KEY } from "../../lib/config";
 import { NICARAGUA_HOSPITALS } from '../../data/nicaraguaHospitals';
+import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
 import { getClinicTypeDetails, FILTER_OPTIONS, ALL_SEARCH_TERMS, FilterType } from './mapUtils';
 import { getReportSummaries, getConfidenceBadge, ReportSummary } from '../../services/facilityReportService';
 import { ReportModal } from './ReportModal';
@@ -406,6 +407,20 @@ export default function HealthMap() {
   // Use 'any' to avoid crashes when google.maps.places types are not available (API key restriction)
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [localSuggestions, setLocalSuggestions] = useState<(Clinic & { isOpen?: boolean })[]>([]);
+
+  const groupedSuggestions = useMemo(() => {
+    const groups: Record<string, (Clinic & { isOpen?: boolean })[]> = {};
+    localSuggestions.forEach(clinic => {
+      const details = getClinicTypeDetails(clinic.type);
+      const groupName = details.label || 'Otros';
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(clinic);
+    });
+    return groups;
+  }, [localSuggestions]);
+
   const [autocompleteLoading, setAutocompleteLoading] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -423,11 +438,24 @@ export default function HealthMap() {
 
   // --- Seed static data so local search always works (even without API key) ------
   useEffect(() => {
-    const seedClinics: (Clinic & { isOpen?: boolean })[] = NICARAGUA_HOSPITALS.map((h, i) => ({
-      ...h,
-      id: `seed-${i}-${h.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-      isOpen: h.open24h ?? true,
-    }));
+    const seenNames = new Set<string>();
+    const seedClinics: (Clinic & { isOpen?: boolean })[] = [];
+
+    const addUnique = (h: Omit<Clinic, 'id'>, prefix: string, index: number) => {
+      const normalized = h.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      if (!seenNames.has(normalized)) {
+        seenNames.add(normalized);
+        seedClinics.push({
+          ...h,
+          id: `seed-${prefix}-${index}-${h.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          isOpen: h.open24h ?? true,
+        } as Clinic & { isOpen?: boolean });
+      }
+    };
+
+    NICARAGUA_HOSPITALS.forEach((h, i) => addUnique(h, 'h', i));
+    PUBLIC_HEALTH_NETWORK.forEach((h, i) => addUnique(h, 'p', i));
+
     setClinics(seedClinics);
   }, []);
 
@@ -1119,72 +1147,77 @@ export default function HealthMap() {
                       >
                         {/* Local results */}
                         {localSuggestions.length > 0 && (
-                          <>
-                            {suggestions.length === 0 && (
-                              <div className="px-4 pt-3 pb-1">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50">
-                                  Centros encontrados
-                                </span>
+                          <div className="flex flex-col">
+                            {Object.entries(groupedSuggestions).map(([groupName, groupClinics]) => (
+                              <div key={groupName} className="flex flex-col">
+                                <div className="px-4 py-2 flex items-center justify-between bg-gray-50 border-y border-gray-100">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-primary/80">
+                                    {groupName}
+                                  </span>
+                                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                    {groupClinics.length}
+                                  </span>
+                                </div>
+                                {groupClinics.map((clinic, idx) => {
+                                  const details = getClinicTypeDetails(clinic.type);
+                                  const q = normalizeString(searchQuery);
+                                  const name = clinic.name;
+                                  const lowerName = normalizeString(name);
+                                  const matchStart = lowerName.indexOf(q);
+
+                                  const renderName = () => {
+                                    if (matchStart === -1) return <span>{name}</span>;
+                                    return (
+                                      <>
+                                        <span>{name.slice(0, matchStart)}</span>
+                                        <span className="font-black text-on-surface">{name.slice(matchStart, matchStart + searchQuery.length)}</span>
+                                        <span>{name.slice(matchStart + searchQuery.length)}</span>
+                                      </>
+                                    );
+                                  };
+
+                                  const isLast = idx === groupClinics.length - 1;
+                                  return (
+                                    <button
+                                      key={clinic.id}
+                                      onMouseDown={() => {
+                                        setSearchQuery(clinic.name);
+                                        setLocalSuggestions([]);
+                                        setSuggestions([]);
+                                        setSearchFocused(false);
+                                        handleClinicSelect(clinic);
+                                      }}
+                                      className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left ${
+                                        !isLast ? 'border-b border-gray-100' : ''
+                                      }`}
+                                    >
+                                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${details.colorClasses}`}>
+                                        {React.createElement(details.icon, { className: 'w-4 h-4' })}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-800 leading-tight truncate">
+                                          {renderName()}
+                                        </p>
+                                        <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                                          {clinic.address || details.label}
+                                        </p>
+                                      </div>
+                                      <div className="shrink-0 flex flex-col items-end gap-0.5">
+                                        {clinic.rating && (
+                                          <span className="text-[9px] text-amber-500 font-bold">★ {clinic.rating.toFixed(1)}</span>
+                                        )}
+                                        {(clinic.isOpen || clinic.open24h) ? (
+                                          <span className="text-[8px] font-bold text-emerald-500">Abierto</span>
+                                        ) : (
+                                          <span className="text-[8px] font-bold text-red-400">Cerrado</span>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            )}
-                            {localSuggestions.map((clinic, idx) => {
-                              const details = getClinicTypeDetails(clinic.type);
-                              const q = normalizeString(searchQuery);
-                              const name = clinic.name;
-                              const lowerName = normalizeString(name);
-                              const matchStart = lowerName.indexOf(q);
-
-                              const renderName = () => {
-                                if (matchStart === -1) return <span>{name}</span>;
-                                return (
-                                  <>
-                                    <span>{name.slice(0, matchStart)}</span>
-                                    <span className="font-black text-on-surface">{name.slice(matchStart, matchStart + searchQuery.length)}</span>
-                                    <span>{name.slice(matchStart + searchQuery.length)}</span>
-                                  </>
-                                );
-                              };
-
-                              const isLast = idx === localSuggestions.length - 1 && suggestions.length === 0;
-                              return (
-                                <button
-                                  key={clinic.id}
-                                  onMouseDown={() => {
-                                    setSearchQuery(clinic.name);
-                                    setLocalSuggestions([]);
-                                    setSuggestions([]);
-                                    setSearchFocused(false);
-                                    handleClinicSelect(clinic);
-                                  }}
-                                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-colors text-left ${
-                                    !isLast ? 'border-b border-outline-variant/10' : ''
-                                  }`}
-                                >
-                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${details.colorClasses}`}>
-                                    {React.createElement(details.icon, { className: 'w-4 h-4' })}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-on-surface-variant leading-tight truncate">
-                                      {renderName()}
-                                    </p>
-                                    <p className="text-[11px] text-on-surface-variant/60 truncate mt-0.5">
-                                      {clinic.address || details.label}
-                                    </p>
-                                  </div>
-                                  <div className="shrink-0 flex flex-col items-end gap-0.5">
-                                    {clinic.rating && (
-                                      <span className="text-[9px] text-amber-500 font-bold">★ {clinic.rating.toFixed(1)}</span>
-                                    )}
-                                    {(clinic.isOpen || clinic.open24h) ? (
-                                      <span className="text-[8px] font-bold text-emerald-500">Abierto</span>
-                                    ) : (
-                                      <span className="text-[8px] font-bold text-red-400">Cerrado</span>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </>
+                            ))}
+                          </div>
                         )}
 
                         {/* Google Places predictions */}
