@@ -24,7 +24,12 @@ export default function Assistant() {
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
-    const response = await getHealthAssistant(userMessage, membership, []);
+    const history = messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' as const : 'user' as const,
+      parts: [{ text: m.content }]
+    }));
+
+    const response = await getHealthAssistant(userMessage, membership, history);
     setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     setIsLoading(false);
   };
@@ -37,11 +42,11 @@ export default function Assistant() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-primary">Asistente de Salur Conecta IA</h2>
-          <p className="text-sm text-slate-500">Emp\u00e1tico y Eficiente • Disponible 24/7</p>
+          <p className="text-sm text-slate-500">Empático y Eficiente • Disponible 24/7</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto mb-6 space-y-4 pr-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto mb-6 space-y-4 pr-2 custom-scrollbar" ref={scrollRef}>
         <AnimatePresence initial={false}>
           {messages.map((message, index) => (
             <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
