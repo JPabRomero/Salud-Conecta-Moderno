@@ -589,6 +589,8 @@ export default function Search({ onOpenRegistration }: SearchProps) {
           <EstablishmentDetailModal 
             item={selectedItem} 
             onClose={() => setSelectedItem(null)} 
+            likedItems={likedItems}
+            onToggleLike={toggleLike}
           />
         )}
       </AnimatePresence>
@@ -599,9 +601,11 @@ export default function Search({ onOpenRegistration }: SearchProps) {
 interface DetailModalProps {
   item: any;
   onClose: () => void;
+  likedItems: Record<string, boolean>;
+  onToggleLike: (itemId: string, e: React.MouseEvent) => void;
 }
 
-function EstablishmentDetailModal({ item, onClose }: DetailModalProps) {
+function EstablishmentDetailModal({ item, onClose, likedItems, onToggleLike }: DetailModalProps) {
   const isPublic = item.category === 'public_health';
   const hasCoordinates = !!item.location;
 
@@ -667,9 +671,20 @@ function EstablishmentDetailModal({ item, onClose }: DetailModalProps) {
             }`}>
               {isPublic ? 'Red MINSA' : 'Clínica Premium'}
             </span>
-            <span className="flex items-center text-amber-400 gap-1 text-sm font-black bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm">
-              ★ {item.rating}
-            </span>
+            <div className="flex gap-2">
+              <span className="flex items-center text-amber-400 gap-1 text-sm font-black bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm">
+                ★ {item.rating}
+              </span>
+              <button 
+                onClick={(e) => onToggleLike(item.id, e)}
+                className={`flex items-center gap-1.5 text-xs font-black bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm border transition-all active:scale-95 ${
+                  likedItems[item.id] ? 'text-red-400 border-red-500/30' : 'text-white/80 border-white/10'
+                }`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${likedItems[item.id] ? 'fill-red-400 text-red-400' : ''}`} />
+                {Math.round((item.rating * 14) + (likedItems[item.id] ? 1 : 0))}
+              </button>
+            </div>
           </div>
         </div>
 
