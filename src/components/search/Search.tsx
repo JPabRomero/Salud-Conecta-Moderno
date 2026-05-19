@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { useUser } from '../../contexts/UserContext';
 import { NICARAGUA_HOSPITALS } from '../../data/nicaraguaHospitals';
 import { PUBLIC_HEALTH_NETWORK } from '../../data/nicaraguaPublicHealthNetwork';
@@ -19,7 +20,11 @@ import {
   ShieldCheck,
   Activity,
   Building2,
-  Lock
+  Lock,
+  PhoneCall,
+  ExternalLink,
+  Heart,
+  X as XIcon
 } from 'lucide-react';
 
 interface SearchProps {
@@ -31,6 +36,7 @@ export default function Search({ onOpenRegistration }: SearchProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [locationQuery, setLocationQuery] = React.useState('');
+  const [selectedItem, setSelectedItem] = React.useState<any | null>(null);
 
   React.useEffect(() => {
     const handleCategory = (e: any) => {
@@ -65,7 +71,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
         distance: 'Centro MINSA',
         status: item.open24h ? 'Abierto 24h' : 'Horario Regular',
         statusType: 'available',
-        services: item.services || ['Atención General', 'Emergencias']
+        services: item.services || ['Atención General', 'Emergencias'],
+        phone: item.phone || '+505 2222-2222',
+        address: item.address || 'Nicaragua',
+        location: item.location
       }));
   }, []);
 
@@ -81,7 +90,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
       distance: '2.4 km',
       status: 'Disponible Ahora',
       statusType: 'available',
-      services: ['Ecocardiograma', 'Holter', 'Prueba de Esfuerzo']
+      services: ['Ecocardiograma', 'Holter', 'Prueba de Esfuerzo'],
+      phone: '+505 2278 1283',
+      address: 'Pista Juan Pablo II, Managua',
+      location: { lat: 12.120, lng: -86.245 }
     },
     {
       id: '2',
@@ -93,7 +105,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
       distance: '3.1 km',
       status: 'Mañana, 09:00',
       statusType: 'scheduled',
-      services: ['Electroencefalograma', 'Mapeo Cerebral']
+      services: ['Electroencefalograma', 'Mapeo Cerebral'],
+      phone: '+505 2265 1400',
+      address: 'Pista Suburbana, Managua',
+      location: { lat: 12.124, lng: -86.298 }
     },
     {
       id: '3',
@@ -105,7 +120,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
       distance: '1.2 km',
       status: 'Abierto 24h',
       statusType: 'available',
-      services: ['Rayos X', 'Laboratorio', 'Farmacia 24/7']
+      services: ['Rayos X', 'Laboratorio', 'Farmacia 24/7'],
+      phone: '+505 2552 2323',
+      address: 'Granada, Nicaragua',
+      location: { lat: 11.931, lng: -85.954 }
     },
     {
       id: '4',
@@ -117,7 +135,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
       distance: '0.5 km',
       status: 'Cierra a las 22:00',
       statusType: 'limited',
-      services: ['Recetario', 'Cosmética', 'Inyectables']
+      services: ['Recetario', 'Cosmética', 'Inyectables'],
+      phone: '+505 2552 8000',
+      address: 'Plaza Central, Granada',
+      location: { lat: 11.930, lng: -85.957 }
     },
     {
       id: '5',
@@ -129,7 +150,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
       distance: '4.2 km',
       status: 'Resultados en 24h',
       statusType: 'available',
-      services: ['Hematología', 'Química Sanguínea', 'Uroanálisis']
+      services: ['Hematología', 'Química Sanguínea', 'Uroanálisis'],
+      phone: '+505 2552 1122',
+      address: 'Calle La Calzada, Granada',
+      location: { lat: 11.929, lng: -85.953 }
     }
   ];
 
@@ -329,7 +353,10 @@ export default function Search({ onOpenRegistration }: SearchProps) {
                       <span className="flex items-center gap-1.5 text-xs font-medium text-on-surface-variant">
                         <MapPin className="w-4 h-4 text-primary" /> {item.distance}
                       </span>
-                      <button className="bg-primary text-on-primary hover:brightness-110 px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95">
+                      <button 
+                        onClick={() => setSelectedItem(item)}
+                        className="bg-primary text-on-primary hover:brightness-110 px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95"
+                      >
                         {item.category === 'doctor' ? 'Agendar Cita' : 'Ver Perfil'}
                       </button>
                     </div>
@@ -454,6 +481,163 @@ export default function Search({ onOpenRegistration }: SearchProps) {
           </div>
         </aside>
       </div>
+      <AnimatePresence>
+        {selectedItem && (
+          <EstablishmentDetailModal 
+            item={selectedItem} 
+            onClose={() => setSelectedItem(null)} 
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+interface DetailModalProps {
+  item: any;
+  onClose: () => void;
+}
+
+function EstablishmentDetailModal({ item, onClose }: DetailModalProps) {
+  const isPublic = item.category === 'public_health';
+  const hasCoordinates = !!item.location;
+
+  const handleDirections = () => {
+    if (hasCoordinates) {
+      const url = `https://www.openstreetmap.org/?mlat=${item.location.lat}&mlon=${item.location.lng}#map=17/${item.location.lat}/${item.location.lng}`;
+      window.open(url, '_blank');
+    } else {
+      const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(item.name)}`;
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleAction = () => {
+    onClose();
+    if (item.category === 'doctor') {
+      window.dispatchEvent(new CustomEvent('changeTab', { detail: 'appointments' }));
+    } else {
+      window.dispatchEvent(new CustomEvent('changeTab', { detail: 'appointments' }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+      />
+
+      {/* Modal Card */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="bg-surface-container border border-outline-variant/30 rounded-[32px] overflow-hidden w-full max-w-2xl shadow-2xl relative z-10 flex flex-col max-h-[90vh]"
+      >
+        {/* Cover Image & Close */}
+        <div className="relative h-60 w-full bg-surface-bright shrink-0">
+          <img 
+            src={item.image} 
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white hover:bg-black/60 p-2.5 rounded-full transition-all border border-white/20"
+          >
+            <XIcon className="w-5 h-5" />
+          </button>
+
+          {/* Floating Badges */}
+          <div className="absolute bottom-4 left-6 right-6 flex flex-wrap gap-2 items-center justify-between">
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+              isPublic 
+                ? 'bg-hospital-green text-white' 
+                : 'bg-amber-500 text-black'
+            }`}>
+              {isPublic ? 'Red MINSA' : 'Clínica Premium'}
+            </span>
+            <span className="flex items-center text-amber-400 gap-1 text-sm font-black bg-black/40 px-3 py-1 rounded-lg backdrop-blur-sm">
+              ★ {item.rating}
+            </span>
+          </div>
+        </div>
+
+        {/* Scrollable details */}
+        <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-grow">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-display font-black text-on-surface leading-tight mb-2">
+              {item.name}
+            </h2>
+            <p className="text-primary text-sm font-bold uppercase tracking-wider">
+              {item.category === 'doctor' ? 'Profesional Médico Registrado' : 'Establecimiento Médico'}
+            </p>
+          </div>
+
+          <div className="space-y-4 border-t border-outline-variant/10 pt-6">
+            <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Sobre Nosotros</h3>
+            <p className="text-on-surface-variant text-base leading-relaxed font-medium opacity-90">
+              {item.description}
+            </p>
+          </div>
+
+          {item.services && item.services.length > 0 && (
+            <div className="space-y-3 border-t border-outline-variant/10 pt-6">
+              <h3 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Servicios Disponibles</h3>
+              <div className="flex flex-wrap gap-2">
+                {item.services.map((service: string, idx: number) => (
+                  <span key={idx} className="text-[10px] font-extrabold text-primary bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-lg uppercase tracking-wider">
+                    {service}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-outline-variant/10 pt-6">
+            <div className="space-y-2">
+              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Contacto Directo</h4>
+              <p className="text-on-surface font-semibold text-lg flex items-center gap-2">
+                <PhoneCall className="w-5 h-5 text-primary shrink-0" />
+                {item.phone}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Ubicación y Dirección</h4>
+              <p className="text-on-surface font-medium text-sm flex items-start gap-2">
+                <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                {item.address}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div className="p-6 bg-surface-container-high/50 border-t border-outline-variant/20 shrink-0 flex flex-col sm:flex-row gap-3">
+          <button 
+            onClick={handleDirections}
+            className="flex-1 py-4 border border-outline-variant/80 hover:bg-surface-container-highest/50 text-on-surface rounded-2xl text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Cómo Llegar (Mapa)
+          </button>
+          
+          <button 
+            onClick={handleAction}
+            className="flex-1 py-4 bg-primary text-on-primary hover:brightness-110 rounded-2xl text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
+          >
+            <Calendar className="w-4 h-4" />
+            {item.category === 'doctor' ? 'Agendar Cita' : 'Solicitar Turno'}
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
