@@ -20,7 +20,8 @@ import {
   Trophy,
   Flame,
   Bell,
-  Crown
+  Crown,
+  Building2
 } from 'lucide-react';
 import { auth, signInWithGoogle, handleRedirectResult } from '../../lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
@@ -127,13 +128,14 @@ export default function Shell({ children, activeTab, setActiveTab }: ShellProps)
             <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button 
-            onClick={() => setActiveTab('map')}
-            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-all ${
-              activeTab === 'map' ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-surface-container'
-            }`}
-            title={t('header.map')}
+            onClick={() => {
+              setActiveTab('search');
+              setTimeout(() => window.dispatchEvent(new CustomEvent('setSearchCategory', { detail: 'public_health' })), 100);
+            }}
+            className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full transition-all text-on-surface-variant hover:bg-surface-container`}
+            title="Salud Pública"
           >
-            <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button 
             onClick={() => setActiveTab('premium-health')}
