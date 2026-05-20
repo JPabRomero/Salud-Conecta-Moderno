@@ -104,15 +104,23 @@ export function Profile() {
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
-  // Mock data matching the UI mockup
-  const [profile, setProfile] = useState({
-    name: user?.displayName || 'Carlos Méndez',
-    phone: '+54 9 11 1234-5678',
-    email: user?.email || 'carlos.mendez@ejemplo.com',
-    address: 'Av. Libertador 1234, Piso 5A, CABA',
-    bloodType: 'O Positivo',
-    allergies: 'Penicilina',
-    dob: '1978-03-14',
+  const loadProfileData = () => {
+    const savedProfile = localStorage.getItem('userProfile');
+    if (savedProfile) {
+      return JSON.parse(savedProfile);
+    }
+    return {
+      name: user?.displayName || 'Carlos Méndez',
+      phone: '+54 9 11 1234-5678',
+      email: user?.email || 'carlos.mendez@ejemplo.com',
+      address: 'Av. Libertador 1234, Piso 5A, CABA',
+      bloodType: 'O Positivo',
+      allergies: 'Penicilina',
+      dob: '1978-03-14'
+    };
+  };
+
+  const [profile, setProfile] = useState(loadProfileData);
     photoURL: user?.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuCNjxM_kx1krlJpGAVOh-nfFDhGn7s-29GpIE4wJWRsqYWpCfOS2KwA0mDjXP283OFfd0LtGx5JPWVrYMEB1cg1irom_1Hm34eluol-cmYe4YG_wnOcjQSvXjDOPm-gtH24rSMm6i0J8uh2fP2_ixZm9Bq0yqMp4aTljcnyLHm8NYc7BeN6mABRDrlnCT35AHv-EBa3m15B2F8AG3IKN-eRA6aH-P_gNEBQ7te36sc60HjVj0KVBPIT4WPJljYhbiXnLMmBo9Tw9A"
   });
 
@@ -196,7 +204,19 @@ export function Profile() {
       setIsSaving(false);
       setIsPreviewMode(false);
 
-      // Persist the updated details back to the active user context
+      const profileData = {
+        name: profile.name,
+        phone: profile.phone,
+        email: profile.email,
+        address: profile.address,
+        bloodType: profile.bloodType,
+        allergies: profile.allergies,
+        dob: profile.dob,
+        photoURL: profile.photoURL
+      };
+
+      localStorage.setItem('userProfile', JSON.stringify(profileData));
+
       const updatedUser = {
         ...user,
         displayName: profile.name,
@@ -205,7 +225,6 @@ export function Profile() {
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
-      // Trigger a sync event so that other components in the SPA (like header/sidebar) update dynamically
       window.dispatchEvent(new Event('storage'));
 
       setToastMessage(t('profile.profile_updated'));
